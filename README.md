@@ -61,6 +61,12 @@ Generation uses the existing `pt-gemini-proxy` Cloudflare Worker; API keys stay 
 
 The organization site publishes the built `dist` directory from the `gh-pages` branch. Source checks run on `main` and pull requests. The scoped minimatch override keeps the linter dependency on the patched version until typescript-eslint updates its dependency range.
 
+## Search indexing
+
+The production build renders the public homepage into HTML and publishes its canonical URL, description, social metadata, structured data, `robots.txt`, and `sitemap.xml`. Saved programs and progress are never included in the generated HTML. Hash-based program views are not listed as separate sitemap URLs.
+
+To request Google indexing, verify the URL-prefix property `https://physioflow-app.github.io/` in Google Search Console, submit `https://physioflow-app.github.io/sitemap.xml`, and request indexing for the homepage through URL Inspection. If using Google's HTML-file verification, place the supplied file in `public/` and redeploy. Submission does not guarantee indexing.
+
 ## Usage
 
 1. Open [PhysioFlow](https://physioflow-app.github.io/)
