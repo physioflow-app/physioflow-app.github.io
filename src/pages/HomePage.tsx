@@ -137,6 +137,31 @@ export const HomePage: React.FC = () => {
         {pageState === 'input' && (
           <AIProgramHistory programs={savedPrograms} onSelect={handleSelectSaved} onDelete={deleteProgram} />
         )}
+        {pageState === 'input' && (
+          <section aria-labelledby="about-physioflow" style={{ padding: '16px 0 36px', color: brand.charcoal, fontSize: 14, lineHeight: 1.8 }}>
+            <h2 id="about-physioflow" style={{ fontFamily: "'DM Serif Display', serif", fontSize: 26, color: brand.forest, lineHeight: 1.3 }}>
+              Free personalized exercise programs
+            </h2>
+            <p>
+              PhysioFlow helps you build a stretching, strengthening, and mobility routine
+              around the issue you describe. Get a progressive, multi-week program for
+              everyday stiffness or movement limitations in areas such as your neck,
+              shoulders, back, hips, and knees.
+            </p>
+            <h3 style={{ fontSize: 20, color: brand.forest }}>How PhysioFlow works</h3>
+            <ol style={{ paddingLeft: 22 }}>
+              <li>Describe your issue and the movements you find difficult.</li>
+              <li>Review your AI-generated program, step-by-step instructions, and available video demonstrations.</li>
+              <li>Save the program, follow the weekly progression, and track completed exercises in your browser.</li>
+            </ol>
+            <p>
+              PhysioFlow is free to use and does not require an account. It provides
+              educational exercise guidance and does not diagnose conditions or replace
+              a healthcare professional. Consult a qualified professional before starting
+              an exercise program.
+            </p>
+          </section>
+        )}
       </div>
 
     </div>
