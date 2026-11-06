@@ -36,7 +36,7 @@ Anyone dealing with everyday musculoskeletal pain who wants a structured plan �
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22.12+ (22, 24, or 26+)
 - npm
 
 ### Installation
@@ -54,6 +54,12 @@ npm run dev
 - `npm run build` — Build for production
 - `npm test` — Run tests
 - `npm run deploy` — Build and deploy to GitHub Pages
+
+## AI service and deployment
+
+Generation uses the existing `pt-gemini-proxy` Cloudflare Worker; API keys stay in its secret bindings. Its CORS allowlist includes `https://physioflow-app.github.io` and the original `https://itzsid.github.io` origin. Set `VITE_GEMINI_PROXY_URL` to override the endpoint. The Vite development server proxies `/api/gemini` to the Worker.
+
+The organization site publishes the built `dist` directory from the `gh-pages` branch. Source checks run on `main` and pull requests. The scoped minimatch override keeps the linter dependency on the patched version until typescript-eslint updates its dependency range.
 
 ## Usage
 
