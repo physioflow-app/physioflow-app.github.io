@@ -53,7 +53,7 @@ Output ONLY valid JSON matching this exact schema (no markdown, no explanation):
   ]
 }
 
-EXERCISE CATALOG (prefer these exact names — they have video demonstrations):
+EXERCISE CATALOG (prefer these exact names — matching video demonstrations are included when available):
 ${EXERCISE_CATALOG}
 
 Rules:

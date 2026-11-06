@@ -45,7 +45,7 @@ describe('predefined catalog integrity', () => {
       expect(new Set(exercises.map((ex) => ex.id)).size).toBe(exercises.length);
       for (const ex of exercises) {
         expect(ex.instructions.length).toBeGreaterThan(0);
-        expect(ex.videoUrl).toMatch(/^https:\/\/www.youtube.com\/embed\/[\w-]{11}$/);
+        if (ex.videoUrl) expect(ex.videoUrl).toMatch(/^https:\/\/www.youtube.com\/embed\/[\w-]{11}$/);
       }
     });
   }

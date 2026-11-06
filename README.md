@@ -15,7 +15,7 @@ Physical therapy is expensive ($50-150/session), waitlists are long, and most pe
 - **No sign-up, no cost, no backend** — runs entirely in your browser with progress saved locally
 - **Educational, not just prescriptive** — explains the root cause and the therapeutic reasoning behind each exercise
 - **Progressive programs** — 3-4 weeks that build from gentle mobility to strengthening, like a real PT would design
-- **Video demonstrations** — every exercise links to verified physical therapist videos (Bob & Brad PT)
+- **Video demonstrations** — matching exercise videos are included when available, primarily from Bob & Brad
 - **AI-driven personalization** — powered by Gemini, tailored to exactly what you describe
 
 ### Who it's for

@@ -22,6 +22,13 @@ describe('ExerciseCard', () => {
     vi.clearAllMocks();
   });
 
+  it('keeps instructions available when no matching video is available', () => {
+    render(<ExerciseCard exercise={{ ...mockExercise, videoUrl: '' }} isCompleted={false} onToggleComplete={mockOnToggleComplete} />);
+    expect(screen.queryByRole('button', { name: 'Watch Video' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'View Steps' }));
+    expect(screen.getByText('Step 1: Do this')).toBeVisible();
+  });
+
   it('should render exercise name and description', () => {
     render(
       <ExerciseCard

@@ -25,7 +25,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 2,
           reps: 10,
-          videoUrl: 'https://www.youtube.com/embed/SxQkVD1Wp4k',
+          videoUrl: '',
           difficulty: 'beginner',
           targetArea: 'Thoracic spine'
         },
@@ -76,7 +76,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 2,
           duration: '30 seconds each side',
-          videoUrl: 'https://www.youtube.com/embed/SxQkVD1Wp4k',
+          videoUrl: '',
           difficulty: 'beginner',
           targetArea: 'Thoracic rotators, rhomboids'
         },
@@ -93,7 +93,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 2,
           duration: '30 seconds',
-          videoUrl: 'https://www.youtube.com/embed/SxQkVD1Wp4k',
+          videoUrl: '',
           difficulty: 'beginner',
           targetArea: 'Pectorals, anterior shoulders'
         }
@@ -207,7 +207,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 3,
           reps: 12,
-          videoUrl: 'https://www.youtube.com/embed/RoOE-M8kx68',
+          videoUrl: '',
           difficulty: 'intermediate',
           targetArea: 'Rhomboids, lats, middle trapezius'
         },
@@ -224,7 +224,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 3,
           reps: 15,
-          videoUrl: 'https://www.youtube.com/embed/RoOE-M8kx68',
+          videoUrl: '',
           difficulty: 'intermediate',
           targetArea: 'Posterior deltoids, rhomboids'
         },
@@ -258,7 +258,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 3,
           reps: 10,
-          videoUrl: 'https://www.youtube.com/embed/SxQkVD1Wp4k',
+          videoUrl: '',
           difficulty: 'intermediate',
           targetArea: 'Thoracic rotators'
         },
@@ -275,7 +275,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 3,
           reps: 12,
-          videoUrl: 'https://www.youtube.com/embed/RoOE-M8kx68',
+          videoUrl: '',
           difficulty: 'intermediate',
           targetArea: 'Rear deltoids, external rotators, rhomboids'
         }
@@ -315,7 +315,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 3,
           reps: 10,
-          videoUrl: 'https://www.youtube.com/embed/RoOE-M8kx68',
+          videoUrl: '',
           difficulty: 'intermediate',
           targetArea: 'Rhomboids, lats, thoracic rotators'
         },
@@ -349,7 +349,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 2,
           reps: 10,
-          videoUrl: 'https://www.youtube.com/embed/SxQkVD1Wp4k',
+          videoUrl: '',
           difficulty: 'beginner',
           targetArea: 'Thoracic spine extensors'
         },
@@ -366,7 +366,7 @@ export const upperBackProgram: Program = {
           ],
           sets: 1,
           duration: '5 minutes',
-          videoUrl: 'https://www.youtube.com/embed/SxQkVD1Wp4k',
+          videoUrl: '',
           difficulty: 'intermediate',
           targetArea: 'Full thoracic spine and shoulders'
         }
