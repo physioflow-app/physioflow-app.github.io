@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://physioflow-app.github.io/sitemap.xml
