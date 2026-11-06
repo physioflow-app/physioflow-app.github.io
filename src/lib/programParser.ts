@@ -1,101 +1,95 @@
 import { Program, WeekProgram, Exercise } from '../types';
 
-interface RawExercise {
-  name?: string;
-  description?: string;
-  instructions?: string[];
-  sets?: number | null;
-  reps?: number | null;
-  duration?: string | null;
-  difficulty?: string;
-  targetArea?: string;
+type ObjectValue = Record<string, unknown>;
+
+function object(value: unknown): ObjectValue {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('The AI returned an invalid program. Please try again.');
+  }
+  return value as ObjectValue;
 }
 
-interface RawWeek {
-  week?: number;
-  focus?: string;
-  exercises?: RawExercise[];
+function text(value: unknown, fallback = ''): string {
+  if (value == null) return fallback;
+  if (typeof value !== 'string') throw new Error('The AI returned invalid text. Please try again.');
+  return value.trim() || fallback;
 }
 
-interface RawProgram {
-  bodyPart?: string;
-  title?: string;
-  description?: string;
-  whyItExists?: string;
-  howExercisesHelp?: string;
-  duration?: number;
-  weeks?: RawWeek[];
+function count(value: unknown): number | undefined {
+  if (value == null) return undefined;
+  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
+    throw new Error('The AI returned an invalid exercise count. Please try again.');
+  }
+  return value;
 }
 
 export function parseProgram(llmOutput: string): Program {
-  const jsonStr = extractJSON(llmOutput);
-  let raw: RawProgram;
-
+  let parsed: unknown;
   try {
-    raw = JSON.parse(jsonStr);
+    parsed = JSON.parse(extractJSON(llmOutput));
   } catch {
-    throw new Error('Failed to parse LLM output as JSON. The model may not have produced valid JSON.');
+    throw new Error('Failed to parse AI output as JSON. Please try again.');
   }
-
-  if (!raw.weeks || !Array.isArray(raw.weeks) || raw.weeks.length === 0) {
+  const raw = object(parsed);
+  if (!Array.isArray(raw.weeks) || raw.weeks.length === 0) {
     throw new Error('Program must contain at least one week of exercises.');
   }
-
-  const timestamp = Date.now();
-  const programId = `ai-${timestamp}`;
-
-  const weeks: WeekProgram[] = raw.weeks.map((rawWeek, weekIdx) => {
-    const exercises: Exercise[] = (rawWeek.exercises || []).map((rawEx, exIdx) => ({
-      id: `${programId}-w${weekIdx + 1}-e${exIdx}`,
-      name: rawEx.name || `Exercise ${exIdx + 1}`,
-      description: rawEx.description || '',
-      instructions: Array.isArray(rawEx.instructions) ? rawEx.instructions : [],
-      sets: rawEx.sets ?? undefined,
-      reps: rawEx.reps ?? undefined,
-      duration: rawEx.duration ?? undefined,
-      videoUrl: '',
-      difficulty: validateDifficulty(rawEx.difficulty),
-      targetArea: rawEx.targetArea || 'General',
-    }));
-
+  const programId = `ai-${crypto.randomUUID()}`;
+  const weeks: WeekProgram[] = raw.weeks.map((value, weekIdx) => {
+    const rawWeek = object(value);
+    if (!Array.isArray(rawWeek.exercises) || rawWeek.exercises.length === 0) {
+      throw new Error('Each week must contain at least one exercise. Please try again.');
+    }
+    const exercises: Exercise[] = rawWeek.exercises.map((value, exIdx) => {
+      const rawEx = object(value);
+      const name = text(rawEx.name);
+      if (!name || !Array.isArray(rawEx.instructions) || rawEx.instructions.length === 0 ||
+          rawEx.instructions.some((step) => typeof step !== 'string' || !step.trim())) {
+        throw new Error('Each exercise must have a name and instruction steps. Please try again.');
+      }
+      return {
+        id: `${programId}-w${weekIdx + 1}-e${exIdx}`,
+        name,
+        description: text(rawEx.description),
+        instructions: rawEx.instructions.map((step: string) => step.trim()),
+        sets: count(rawEx.sets),
+        reps: count(rawEx.reps),
+        duration: text(rawEx.duration) || undefined,
+        videoUrl: '',
+        difficulty: validateDifficulty(rawEx.difficulty),
+        targetArea: text(rawEx.targetArea, 'General'),
+      };
+    });
     return {
-      week: rawWeek.week || weekIdx + 1,
-      focus: rawWeek.focus || `Week ${weekIdx + 1}`,
+      // Navigation and persisted progress use sequential, one-based weeks.
+      week: weekIdx + 1,
+      focus: text(rawWeek.focus, `Week ${weekIdx + 1}`),
       exercises,
     };
   });
-
   return {
     id: programId,
-    bodyPart: raw.bodyPart || 'Custom',
+    bodyPart: text(raw.bodyPart, 'Custom'),
     bodyPartId: 'ai-custom',
-    title: raw.title || 'AI-Generated Program',
-    description: raw.description || 'A personalized physical therapy program.',
-    duration: raw.duration || weeks.length,
+    title: text(raw.title, 'AI-Generated Program'),
+    description: text(raw.description, 'A personalized physical therapy program.'),
+    duration: weeks.length,
     weeks,
     isAIGenerated: true,
     searchQuery: '',
-    whyItExists: raw.whyItExists || undefined,
-    howExercisesHelp: raw.howExercisesHelp || undefined,
+    whyItExists: text(raw.whyItExists) || undefined,
+    howExercisesHelp: text(raw.howExercisesHelp) || undefined,
   };
 }
 
-function extractJSON(text: string): string {
-  // Remove markdown code fences
-  let cleaned = text.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '');
-
-  // Try to find JSON object boundaries
+function extractJSON(value: string): string {
+  let cleaned = value.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '');
   const firstBrace = cleaned.indexOf('{');
   const lastBrace = cleaned.lastIndexOf('}');
-
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
-  }
-
+  if (firstBrace !== -1 && lastBrace > firstBrace) cleaned = cleaned.substring(firstBrace, lastBrace + 1);
   return cleaned.trim();
 }
 
-function validateDifficulty(d?: string): 'beginner' | 'intermediate' | 'advanced' {
-  if (d === 'beginner' || d === 'intermediate' || d === 'advanced') return d;
-  return 'beginner';
+function validateDifficulty(value: unknown): Exercise['difficulty'] {
+  return value === 'intermediate' || value === 'advanced' ? value : 'beginner';
 }

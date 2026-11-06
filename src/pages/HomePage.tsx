@@ -63,6 +63,7 @@ export const HomePage: React.FC = () => {
   }, []);
 
   const isLoading = pageState === 'loading';
+  const isSaved = savedPrograms.some((program) => program.id === currentProgram?.id);
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto' }}>
@@ -105,9 +106,10 @@ export const HomePage: React.FC = () => {
             <div style={{ padding: '16px 0', display: 'flex', gap: 12 }}>
               <button
                 onClick={handleSave}
+                disabled={isSaved}
                 style={{ flex: 1, padding: '14px 32px', borderRadius: 100, border: 'none', background: brand.forest, color: 'white', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
               >
-                Save Program
+                {isSaved ? 'Program Saved' : 'Save Program'}
               </button>
               <button
                 onClick={handleGenerateAnother}
@@ -121,15 +123,15 @@ export const HomePage: React.FC = () => {
 
         {isLoading && <ModelLoadingProgress status={status} progress={progress} progressText={progressText} />}
 
-        {pageState === 'input' && (
-          <>
+        {pageState !== 'result' && (
+          <div hidden={isLoading}>
             {generationError && (
               <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 16, padding: 16, color: '#b91c1c', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>
                 {generationError}
               </div>
             )}
             <AIInputForm onSubmit={handleSubmit} isDisabled={isLoading} />
-          </>
+          </div>
         )}
 
         {pageState === 'input' && (

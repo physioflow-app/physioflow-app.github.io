@@ -44,6 +44,7 @@ export const AIInputForm: React.FC<AIInputFormProps> = ({ onSubmit, isDisabled }
 
       <form onSubmit={handleSubmit}>
         <textarea
+          aria-label="Describe your issue"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="e.g., I have pain in my lower back when bending forward, especially in the morning..."

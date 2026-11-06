@@ -24,7 +24,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   const completedCount = week.exercises.filter(
     (ex) => progress?.completedExercises[ex.id]
   ).length;
-  const progressPercentage = Math.round((completedCount / week.exercises.length) * 100);
+  const progressPercentage = week.exercises.length ? Math.round((completedCount / week.exercises.length) * 100) : 0;
 
   return (
     <div>

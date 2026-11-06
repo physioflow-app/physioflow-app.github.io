@@ -64,6 +64,12 @@ const App: React.FC = () => {
           <p style={{ fontSize: 11, color: brand.stone, fontFamily: "'DM Sans', sans-serif", marginTop: 4, opacity: 0.6 }}>
             Progress is saved locally in your browser.
           </p>
+          <p style={{ fontSize: 12, color: brand.stone, fontFamily: "'DM Sans', sans-serif", margin: '12px 0 0' }}>
+            © {new Date().getFullYear()} · Created by{' '}
+            <a href="https://itzsid.github.io/" style={{ color: brand.forest, textUnderlineOffset: 3 }}>
+              Siddharth Choudhary
+            </a>
+          </p>
         </footer>
       </div>
     </HashRouter>

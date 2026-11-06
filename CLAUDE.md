@@ -9,8 +9,8 @@ An interactive physical therapy website where users can:
 - Track progress with LocalStorage persistence
 
 ## Live URLs
-- **Production**: https://itzsid.github.io/physical-therapy/
-- **GitHub Repo**: https://github.com/itzsid/physical-therapy
+- **Production**: https://physioflow-app.github.io/
+- **GitHub Repo**: https://github.com/physioflow-app/physioflow-app.github.io
 - **Main Site**: https://itzsid.github.io/ (has link in Side Projects section)
 
 ## Tech Stack
@@ -172,11 +172,11 @@ npm run deploy     # Deploy to production
 ```
 
 ## Testing
-- 23 tests covering hooks and components
+- Tests cover hooks, components, complete application flows, AI response validation, and catalog integrity
 - Run `npm test` to verify all pass
 - Tests located in `tests/` directory
 
 ## Notes
-- Base path configured for GitHub Pages: `/physical-therapy/`
+- Base path configured for the organization GitHub Pages site: `/`
 - Repository was made public for GitHub Pages hosting
 - Progress data persists in browser LocalStorage

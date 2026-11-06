@@ -20,10 +20,14 @@ interface UseWebLLMReturn {
 }
 
 // In production, requests go through the Cloudflare Worker proxy (no API key in the browser).
-// In dev, you can override with VITE_GEMINI_PROXY_URL env var.
-const PROXY_URL = import.meta.env.DEV
-  ? '/physical-therapy/api/gemini'
-  : (import.meta.env.VITE_GEMINI_PROXY_URL || 'https://pt-gemini-proxy.itzsid.workers.dev');
+// An override applies in both development and production.
+const PROXY_URL = import.meta.env.VITE_GEMINI_PROXY_URL || (import.meta.env.DEV
+  ? '/api/gemini'
+  : 'https://pt-gemini-proxy.itzsid.workers.dev');
+
+interface GeminiResponse {
+  candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[];
+}
 
 export function useWebLLM(): UseWebLLMReturn {
   const [status, setStatus] = useState<WebLLMStatus>('ready');
@@ -49,15 +53,19 @@ export function useWebLLM(): UseWebLLMReturn {
 
       const maxRetries = 3;
       let lastError: Error | null = null;
-      let data: any = null;
+      let data: GeminiResponse | null = null;
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const controller = new AbortController();
+        let timeout: ReturnType<typeof setTimeout> | undefined;
         try {
           if (attempt > 0) {
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
           }
 
+          timeout = setTimeout(() => controller.abort(), 45000);
           const response = await fetch(PROXY_URL, {
+            signal: controller.signal,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -66,6 +74,7 @@ export function useWebLLM(): UseWebLLMReturn {
               generationConfig: {
                 temperature: 0.3,
                 maxOutputTokens: 8192,
+                responseMimeType: 'application/json',
               },
             }),
           });
@@ -76,6 +85,7 @@ export function useWebLLM(): UseWebLLMReturn {
               continue;
             }
             lastError = new Error(`AI service error (${response.status}). Please try again.`);
+            if (response.status < 500 && response.status !== 408) break;
             continue;
           }
 
@@ -83,14 +93,20 @@ export function useWebLLM(): UseWebLLMReturn {
           lastError = null;
           break;
         } catch (fetchErr) {
-          lastError = fetchErr instanceof Error ? fetchErr : new Error('Failed to fetch');
+          lastError = controller.signal.aborted
+            ? new Error('AI service timed out. Please try again.')
+            : fetchErr instanceof Error ? fetchErr : new Error('Failed to fetch');
+        } finally {
+          clearTimeout(timeout);
         }
       }
 
       if (lastError || !data) {
         throw lastError || new Error('Failed to fetch after retries');
       }
-      const output = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const output = data.candidates?.[0]?.content?.parts
+        ?.filter((part) => !part.thought && typeof part.text === 'string')
+        .map((part) => part.text).join('');
 
       if (!output) {
         throw new Error('No output from Gemini');

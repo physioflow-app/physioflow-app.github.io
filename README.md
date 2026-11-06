@@ -2,7 +2,7 @@
 
 **AI-powered physical therapy, accessible to everyone.**
 
-**Try it now: [physioflow.app](https://itzsid.github.io/physical-therapy/)**
+**Try it now: [physioflow-app.github.io](https://physioflow-app.github.io/)**
 
 ---
 
@@ -36,14 +36,14 @@ Anyone dealing with everyday musculoskeletal pain who wants a structured plan â€
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm
 
 ### Installation
 
 ```bash
-git clone https://github.com/itzsid/physical-therapy.git
-cd physical-therapy
+git clone https://github.com/physioflow-app/physioflow-app.github.io.git
+cd physioflow-app.github.io
 npm install
 npm run dev
 ```
@@ -57,7 +57,7 @@ npm run dev
 
 ## Usage
 
-1. Open [PhysioFlow](https://itzsid.github.io/physical-therapy/)
+1. Open [PhysioFlow](https://physioflow-app.github.io/)
 2. Describe your pain, stiffness, or mobility issue
 3. Get a personalized multi-week program with explanations
 4. Watch video demonstrations for each exercise

@@ -58,6 +58,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </div>
           <button
             onClick={onToggleComplete}
+            aria-label={`Mark ${exercise.name} complete`}
+            aria-pressed={isCompleted}
             style={{
               flexShrink: 0, width: 28, height: 28, borderRadius: 8,
               border: `2px solid ${isCompleted ? brand.sage : brand.warm}`,
@@ -99,6 +101,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           {exercise.videoUrl && (
             <button
               onClick={() => setShowVideo(!showVideo)}
+              aria-expanded={showVideo}
               style={{
                 flex: 1, padding: '10px 20px', borderRadius: 100, border: 'none',
                 background: brand.terracotta, color: 'white',
@@ -111,6 +114,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           )}
           <button
             onClick={() => setShowInstructions(!showInstructions)}
+            aria-expanded={showInstructions}
             style={{
               flex: 1, padding: '10px 20px', borderRadius: 100,
               border: `2px solid ${brand.forest}`, background: 'transparent',

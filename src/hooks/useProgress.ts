@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { Progress, UserProgress, Program } from '../types';
 
@@ -12,7 +13,7 @@ export function useProgress() {
     return userProgress.programs[programId];
   };
 
-  const startProgram = (program: Program): Progress => {
+  const startProgram = useCallback((program: Program): Progress => {
     const progress: Progress = {
       programId: program.id,
       completedExercises: {},
@@ -30,7 +31,7 @@ export function useProgress() {
     }));
 
     return progress;
-  };
+  }, [setUserProgress]);
 
   const toggleExercise = (programId: string, exerciseId: string): void => {
     setUserProgress((prev) => {

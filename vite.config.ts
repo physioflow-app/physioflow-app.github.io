@@ -4,14 +4,14 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
-  base: '/physical-therapy/',
+  base: '/',
   plugins: [react()],
   server: {
     proxy: {
-      '/physical-therapy/api/gemini': {
+      '/api/gemini': {
         target: 'https://pt-gemini-proxy.itzsid.workers.dev',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/physical-therapy\/api\/gemini/, ''),
+        rewrite: (path) => path.replace(/^\/api\/gemini/, ''),
       },
     },
   },

@@ -95,7 +95,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
           {program.weeks.map((week) => {
             const isActive = currentWeek === week.week;
-            const weekProgress = progress
+            const weekProgress = progress && week.exercises.length
               ? Math.round((week.exercises.filter((ex) => progress.completedExercises[ex.id]).length / week.exercises.length) * 100)
               : 0;
             return (
