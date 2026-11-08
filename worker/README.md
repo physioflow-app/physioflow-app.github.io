@@ -1,8 +1,7 @@
 # Gemini proxy Worker
 
-Reference implementation of the Cloudflare Worker at `pt-gemini-proxy.itzsid.workers.dev`
-that the app calls to generate programs. The deployed Worker's source is not in this
-repository, so compare with it before replacing it.
+Source of the Cloudflare Worker deployed at `pt-gemini-proxy.itzsid.workers.dev`, which the
+app calls to generate programs.
 
 What it adds over a plain pass-through proxy:
 
@@ -20,7 +19,7 @@ Deploy:
 
 ```bash
 cd worker
-cp wrangler.toml.example wrangler.toml   # set GEMINI_MODEL to the model you use today
+cp wrangler.toml.example wrangler.toml
 npx wrangler secret put GEMINI_API_KEY
 npx wrangler deploy
 ```

@@ -11,6 +11,9 @@ export default defineConfig({
       '/api/gemini': {
         target: 'https://pt-gemini-proxy.itzsid.workers.dev',
         changeOrigin: true,
+        // The Worker only accepts the production origin. This proxy runs in Node on
+        // your machine, so it presents that origin instead of http://localhost:5173.
+        headers: { origin: 'https://physioflow-app.github.io' },
         rewrite: (path) => path.replace(/^\/api\/gemini/, ''),
       },
     },

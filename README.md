@@ -61,7 +61,7 @@ npm run dev
 
 ## AI service and deployment
 
-Generation uses the existing `pt-gemini-proxy` Cloudflare Worker; API keys stay in its secret bindings. A hardened reference version (origin allowlist, per-IP rate limiting, request allowlist) is in [`worker/`](worker/README.md). Its CORS allowlist includes `https://physioflow-app.github.io` and the original `https://itzsid.github.io` origin. Set `VITE_GEMINI_PROXY_URL` to override the endpoint. The Vite development server proxies `/api/gemini` to the Worker.
+Generation uses the `pt-gemini-proxy` Cloudflare Worker, deployed from [`worker/`](worker/README.md): it accepts requests only from `https://physioflow-app.github.io`, rate limits each IP to 10 requests per minute, forwards only the expected request fields, and keeps the Gemini API key in a Worker secret. Set `VITE_GEMINI_PROXY_URL` to override the endpoint. The Vite development server proxies `/api/gemini` to the Worker and presents the production origin, so AI generation works with `npm run dev` without allowing `localhost` in the Worker.
 
 The organization site publishes the built `dist` directory from the `gh-pages` branch. Source checks run on `main` and pull requests. The scoped minimatch override keeps the linter dependency on the patched version until typescript-eslint updates its dependency range.
 
