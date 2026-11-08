@@ -39,6 +39,7 @@ async function main() {
     const shell = applyMeta(template, getPageMeta('/__app'));
     await writeFile('dist/404.html', shell);
     await writeFile('dist/shared.html', shell);
+    await writeFile('dist/import.html', shell);
 
     const urls = routes.map((route) => `${SITE_URL}${route}`);
     await writeFile('dist/sitemap.xml', [

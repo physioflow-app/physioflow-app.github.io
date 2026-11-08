@@ -34,10 +34,15 @@ export function parseBackup(text: string): Backup {
   if (!value || value.app !== 'physioflow' || value.version !== 1 || !Array.isArray(value.programs)) {
     throw new Error('That file is not a PhysioFlow backup.');
   }
-  const programs = value.programs.map((program) => {
-    const parsed = parseProgram(JSON.stringify(program), { id: program?.id });
-    // Keep the saved exercise IDs and videos, which progress refers to.
-    return { ...parsed, weeks: program.weeks, searchQuery: program.searchQuery, createdAt: program.createdAt };
+  // Skip individual programs that fail validation rather than rejecting the whole file.
+  const programs = value.programs.flatMap((program) => {
+    try {
+      const parsed = parseProgram(JSON.stringify(program), { id: program?.id });
+      // Keep the saved exercise IDs and videos, which progress refers to.
+      return [{ ...parsed, weeks: program.weeks, searchQuery: program.searchQuery, createdAt: program.createdAt }];
+    } catch {
+      return [];
+    }
   });
   const progress = value.progress && typeof value.progress === 'object' && value.progress.programs && typeof value.progress.programs === 'object'
     ? value.progress

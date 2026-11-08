@@ -53,6 +53,11 @@ function subscribe(key: string, listener: () => void) {
   };
 }
 
+/** Reads a stored value outside React. */
+export function readLocalStorage<T>(key: string, initialValue: T): T {
+  return read(key, initialValue);
+}
+
 export function writeLocalStorage<T>(key: string, value: T) {
   const raw = JSON.stringify(value);
   try {

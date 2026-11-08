@@ -36,6 +36,11 @@ describe('backups', () => {
     expect(backup.progress).toEqual(progress);
   });
 
+  it('skips invalid programs instead of rejecting the whole backup', () => {
+    const backup = parseBackup(JSON.stringify({ ...createBackup([program], progress), programs: [program, { id: 'ai-bad', weeks: [] }] }));
+    expect(backup.programs.map((saved) => saved.id)).toEqual([program.id]);
+  });
+
   it('rejects other files', () => {
     expect(() => parseBackup('{"hello":1}')).toThrow('not a PhysioFlow backup');
     expect(() => parseBackup('nope')).toThrow('not a PhysioFlow backup');

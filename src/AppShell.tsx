@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
-import { HomePage, MessagePage, PlanPage, ProgramPage, SharedPage } from './pages';
+import { HomePage, ImportPage, MessagePage, PlanPage, ProgramPage, SharedPage } from './pages';
 import { SHARE_PATH } from './lib/share';
 import { brand } from './theme';
 
@@ -62,6 +62,7 @@ const AppShell: React.FC = () => {
             <Route path="/program/:bodyPartId" element={<ProgramPage />} />
             <Route path="/plan/:planId" element={<PlanPage />} />
             <Route path={SHARE_PATH} element={<SharedPage />} />
+            <Route path="/import" element={<ImportPage />} />
             <Route path="*" element={<MessagePage title="Page Not Found">That page does not exist.</MessagePage>} />
           </Routes>
         </main>

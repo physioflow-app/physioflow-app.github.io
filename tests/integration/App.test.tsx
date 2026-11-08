@@ -217,3 +217,24 @@ describe('library, sharing and legacy URLs', () => {
     await screen.findByRole('heading', { name: 'Could Not Open Program' });
   });
 });
+
+describe('moving from the old site', () => {
+  it('imports programs and progress handed over by the old site, then continues', async () => {
+    const { encodeJson } = await import('../../src/lib/encoding');
+    const { createBackup } = await import('../../src/lib/backup');
+    const program = parseProgram(JSON.stringify(rawProgram));
+    const progress = { programs: { 'neck-program': { programId: 'neck-program', completedExercises: {}, currentWeek: 2, startedAt: 'a', lastUpdated: 'b', sessions: [] } } };
+    const encoded = await encodeJson(createBackup([program], progress));
+    window.history.replaceState(null, '', `/import#b=${encoded}&next=/program/neck`);
+    await act(async () => { render(<App />); });
+    await waitFor(() => expect(window.location.pathname).toBe('/program/neck'));
+    expect(storedJson('pt-ai-programs')[0].id).toBe(program.id);
+    expect(screen.getByRole('tab', { name: /Week 2/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('ignores off-site destinations', async () => {
+    window.history.replaceState(null, '', '/import#next=//evil.test');
+    await act(async () => { render(<App />); });
+    await waitFor(() => expect(window.location.pathname).toBe('/'));
+  });
+});
