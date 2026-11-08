@@ -1,182 +1,97 @@
-# Claude Session Context - Physical Therapy App
+# Claude Session Context - PhysioFlow
 
 ## Project Overview
-An interactive physical therapy website where users can:
-- View human anatomy (front and back views)
-- Click on body parts to select areas for physical therapy
-- Get multi-week stretching and strengthening programs
-- Watch exercise video demonstrations (Bob & Brad PT videos)
-- Track progress with LocalStorage persistence
+PhysioFlow is a free, browser-only physical therapy app. Users can:
+- Describe a pain or mobility issue (plus optional pain level, equipment, time, fitness level) and get an AI-generated, multi-week program (Gemini via a Cloudflare Worker)
+- Browse 15 ready-made programs, each with its own crawlable URL (`/program/:bodyPartId`)
+- Log daily sessions and pain, see streaks and a pain trend; weeks advance once the weekly session target is met
+- Share a program by link, and export/import a backup of programs and progress
+- Watch exercise videos (Bob & Brad PT), or search YouTube when no verified video matches
+
+Red-flag symptoms (numbness, bladder/bowel changes, trauma, fever, chest pain, etc.) are screened in the browser (`src/lib/safety.ts`) and by the model (it returns `{"redFlag": true, "reason": ...}`) before a program is generated.
 
 ## Live URLs
 - **Production**: https://physioflow-app.github.io/
 - **GitHub Repo**: https://github.com/physioflow-app/physioflow-app.github.io
 - **Main Site**: https://itzsid.github.io/ (has link in Side Projects section)
+- The old site (https://itzsid.github.io/physical-therapy/) redirects here.
 
 ## Tech Stack
-- **Framework**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS
+- **Framework**: React 18 + TypeScript + Vite, React Router (`BrowserRouter`)
+- **Styling**: inline styles using shared tokens from `src/theme` (also fed into `tailwind.config.js`), Tailwind for utilities
 - **Testing**: Vitest + React Testing Library
 - **Storage**: LocalStorage (no backend)
-- **Deployment**: GitHub Pages via gh-pages package
+- **Deployment**: GitHub Pages (`gh-pages` branch) via the gh-pages package
 
 ## Key Commands
 ```bash
-# Development
-npm run dev          # Start dev server at http://localhost:5173/
-
-# Testing
-npm test             # Run tests in watch mode
-npm run test:coverage # Run tests with coverage
-
-# Build & Deploy
-npm run build        # Build for production
-npm run deploy       # Build and deploy to GitHub Pages
+npm run dev           # Dev server at http://localhost:5173/
+npm test              # Tests in watch mode (npm test -- --run for one pass)
+npm run lint
+npm run build         # Type-check, build, prerender pages + sitemap
+npm run deploy        # Build and deploy to GitHub Pages
 ```
 
 ## Project Structure
 ```
-physical_therapy/
-├── src/
-│   ├── components/
-│   │   ├── AnatomyView/
-│   │   │   ├── AnatomyView.tsx      # Main anatomy component
-│   │   │   ├── BodyPartSvg.tsx      # SVG body with clickable regions
-│   │   │   └── BodyPartSelector.tsx # Front/back toggle
-│   │   ├── Program/
-│   │   │   ├── ProgramView.tsx      # Display exercise program
-│   │   │   ├── ExerciseCard.tsx     # Individual exercise display
-│   │   │   ├── WeekView.tsx         # Weekly breakdown
-│   │   │   └── VideoPlayer.tsx      # YouTube embed component
-│   │   ├── Progress/
-│   │   │   ├── ProgressTracker.tsx  # Track completed exercises
-│   │   │   └── ProgressBar.tsx      # Visual progress indicator
-│   │   └── common/
-│   │       ├── Button.tsx
-│   │       └── Loading.tsx
-│   ├── hooks/
-│   │   ├── useLocalStorage.ts       # LocalStorage hook
-│   │   ├── useProgress.ts           # Progress tracking logic
-│   │   └── useProgram.ts            # Program selection logic
-│   ├── types/
-│   │   └── index.ts                 # TypeScript interfaces
-│   ├── data/
-│   │   ├── bodyParts.ts             # Body part definitions
-│   │   └── exercises/               # Pre-defined exercise programs
-│   │       ├── neck.ts
-│   │       ├── shoulders.ts
-│   │       ├── lowerBack.ts
-│   │       ├── hips.ts
-│   │       ├── knees.ts
-│   │       ├── ankles.ts
-│   │       └── index.ts
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-├── tests/
-│   ├── components/
-│   ├── hooks/
-│   └── setup.ts
-├── package.json
-├── vite.config.ts
-├── tailwind.config.js
-└── tsconfig.json
+src/
+├── App.tsx / AppShell.tsx / main.tsx / entry-server.tsx   # Router, layout, client + prerender entries
+├── seo.ts                     # Per-route title/description/canonical, indexable routes
+├── theme/                     # Brand colour tokens (tokens.json) + fonts
+├── pages/                     # HomePage, ProgramPage (/program/:id), PlanPage (/plan/:id), SharedPage (/shared#p=...), MessagePage
+├── components/
+│   ├── AIProgram/             # AIInputForm, SafetyCheck, GeneratingIndicator, AIProgramHistory (list + backup)
+│   ├── Program/               # ProgramView, WeekView, ExerciseCard, PainTracker, ProgramLibrary, VideoPlayer
+│   └── common/styles.ts       # Shared button/card styles
+├── hooks/
+│   ├── useLocalStorage.ts     # Shared, cross-component localStorage store
+│   ├── useProgress.ts         # Sessions, pain, weeks
+│   ├── useAIPrograms.ts       # Saved AI programs
+│   ├── useProgramGenerator.ts # Gemini request with retries/timeouts
+│   └── usePageMeta.ts         # Client-side title/description/canonical
+├── lib/
+│   ├── promptBuilder.ts       # System prompt (catalog derived from data), intake details
+│   ├── programParser.ts       # Validates model JSON
+│   ├── exerciseCatalog.ts     # Exercises with verified videos
+│   ├── videoMatcher.ts        # Exact + unambiguous loose name matching, YouTube search fallback
+│   ├── safety.ts              # Red-flag screening, pain thresholds
+│   ├── sessions.ts            # Session/streak/trend/week-advance logic
+│   ├── share.ts / encoding.ts # Share links (compressed program in the URL fragment)
+│   ├── backup.ts              # Export/import
+│   └── legacyHash.ts          # Rewrites old /#/... URLs
+├── data/                      # bodyParts.ts, exercises/*.ts (15 programs)
+└── types/index.ts
+scripts/prerender.mjs, scripts/meta.mjs  # Prerender home + program pages, 404.html app shell, sitemap
+worker/                       # Reference hardened Cloudflare Worker for the Gemini proxy
+tests/                        # components, hooks, integration, lib, seo, worker
 ```
 
-## Key TypeScript Interfaces
-```typescript
-interface BodyPart {
-  id: string;
-  name: string;
-  region: 'front' | 'back';
-  description: string;
-}
+## Routing on GitHub Pages
+- `/` and `/program/:id` are prerendered (`dist/index.html`, `dist/program/<id>.html`), so they are indexable.
+- `/plan/:id` and unknown paths are served by `dist/404.html` (the app shell with `noindex`); `/shared` by `dist/shared.html`.
+- Old hash URLs (`/#/program/neck`) are rewritten on load.
 
-interface Exercise {
-  id: string;
-  name: string;
-  description: string;
-  instructions: string[];
-  sets?: number;
-  reps?: number;
-  duration?: string;
-  videoUrl: string;  // YouTube embed URL
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  targetArea: string;
-}
-
-interface WeekProgram {
-  week: number;
-  focus: string;
-  exercises: Exercise[];
-}
-
-interface Program {
-  id: string;
-  bodyPart: string;
-  bodyPartId: string;
-  title: string;
-  description: string;
-  duration: number;  // weeks
-  weeks: WeekProgram[];
-}
-
-interface Progress {
-  programId: string;
-  completedExercises: Record<string, boolean>;
-  currentWeek: number;
-  startedAt: string;
-  lastUpdated: string;
-}
-```
+## Key Data Types
+See `src/types/index.ts`. Progress is stored under `pt-progress` as `{ programs: { [programId]: Progress } }`;
+each `Progress` has `sessions: SessionLog[]` (`{ date: 'YYYY-MM-DD', week, completed: exerciseId[], pain? }`).
+`completedExercises` is kept for backwards compatibility. Saved AI programs are under `pt-ai-programs`.
 
 ## Adding New Body Parts/Programs
-1. Add body part definition in `src/data/bodyParts.ts`
-2. Create exercise program in `src/data/exercises/[bodypart].ts`
-3. Export from `src/data/exercises/index.ts`
-4. Add clickable region in `src/components/AnatomyView/BodyPartSvg.tsx`
+1. Add the body part in `src/data/bodyParts.ts`
+2. Create the program in `src/data/exercises/[bodypart].ts`
+3. Register it in `src/data/exercises/index.ts`
+It then appears in the library, the sitemap, the prerendered pages, and the AI exercise catalog automatically.
 
 ## Video URLs
-All exercise videos use verified Bob & Brad physical therapy YouTube videos:
-- Format: `https://www.youtube.com/embed/[VIDEO_ID]`
-- Channel: "Bob & Brad" - licensed physical therapists
+Verified Bob & Brad videos, format `https://www.youtube.com/embed/[VIDEO_ID]`. Exercises without one get a "Find a Video" YouTube search link.
 
-## Common Tasks
-
-### Add a new exercise to existing program
-Edit the relevant file in `src/data/exercises/`:
-```typescript
-{
-  id: 'unique-id',
-  name: 'Exercise Name',
-  description: 'Brief description',
-  instructions: ['Step 1', 'Step 2', ...],
-  sets: 3,
-  reps: 10,  // OR duration: '30 seconds'
-  videoUrl: 'https://www.youtube.com/embed/VIDEO_ID',
-  difficulty: 'beginner',
-  targetArea: 'Target muscle/area'
-}
-```
-
-### Update styling
-- Global styles: `src/index.css`
-- Tailwind config: `tailwind.config.js`
-- Component-specific: inline Tailwind classes
-
-### Run after making changes
+## Run after making changes
 ```bash
-npm test           # Verify tests pass
-npm run build      # Verify build succeeds
-npm run deploy     # Deploy to production
+npm test -- --run
+npm run lint
+npm run build
 ```
-
-## Testing
-- Tests cover hooks, components, complete application flows, AI response validation, and catalog integrity
-- Run `npm test` to verify all pass
-- Tests located in `tests/` directory
 
 ## Notes
-- Base path configured for the organization GitHub Pages site: `/`
-- Repository was made public for GitHub Pages hosting
-- Progress data persists in browser LocalStorage
+- Base path: `/` (organization GitHub Pages site)
+- Progress data persists in browser LocalStorage only; users can export a backup

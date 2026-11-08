@@ -1,6 +1,8 @@
-import { HashRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import AppShell from './AppShell';
+import { redirectLegacyHashUrl } from './lib/legacyHash';
 
 export default function App() {
-  return <HashRouter><AppShell /></HashRouter>;
+  redirectLegacyHashUrl();
+  return <BrowserRouter><AppShell /></BrowserRouter>;
 }

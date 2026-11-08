@@ -42,6 +42,12 @@ export const getProgramForBodyPart = (bodyPartId: string): Program | undefined =
   return programs[bodyPartId];
 };
 
+/** One entry per program, at its canonical URL (aliases such as 'neck-back' are left out). */
+export const libraryPrograms: Program[] = Array.from(new Set(Object.values(programs)));
+
+/** The canonical body part ID for a program alias, e.g. 'neck-back' -> 'neck'. */
+export const canonicalBodyPartId = (bodyPartId: string): string | undefined => programs[bodyPartId]?.bodyPartId;
+
 export const getAllPrograms = (): Program[] => {
   // Return unique programs only
   const uniquePrograms = new Set(Object.values(programs));

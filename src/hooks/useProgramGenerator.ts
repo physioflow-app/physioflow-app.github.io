@@ -1,22 +1,16 @@
 import { useState, useCallback } from 'react';
-import { Program } from '../types';
-import { buildPrompt } from '../lib/promptBuilder';
+import { IntakeDetails, Program } from '../types';
+import { buildPrompt, PromptOptions } from '../lib/promptBuilder';
+import { SafetyStopError } from '../lib/safety';
 import { parseProgram } from '../lib/programParser';
 import { matchVideos } from '../lib/videoMatcher';
 
-export type WebLLMStatus =
-  | 'idle'
-  | 'ready'
-  | 'generating'
-  | 'error';
+export type GeneratorStatus = 'ready' | 'generating' | 'error';
 
-interface UseWebLLMReturn {
-  status: WebLLMStatus;
-  progress: number;
-  progressText: string;
+interface UseProgramGeneratorReturn {
+  status: GeneratorStatus;
   error: string | null;
-  initModel: () => Promise<void>;
-  generate: (description: string) => Promise<Program>;
+  generate: (description: string, details?: IntakeDetails, options?: PromptOptions) => Promise<Program>;
 }
 
 // In production, requests go through the Cloudflare Worker proxy (no API key in the browser).
@@ -29,23 +23,17 @@ interface GeminiResponse {
   candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[];
 }
 
-export function useWebLLM(): UseWebLLMReturn {
-  const [status, setStatus] = useState<WebLLMStatus>('ready');
-  const [progress] = useState(100);
-  const [progressText] = useState('');
+/** Generates a program by sending the user's description to Gemini through the Worker proxy. */
+export function useProgramGenerator(): UseProgramGeneratorReturn {
+  const [status, setStatus] = useState<GeneratorStatus>('ready');
   const [error, setError] = useState<string | null>(null);
 
-  const initModel = useCallback(async () => {
-    // No model download needed for Gemini API
-    setStatus('ready');
-  }, []);
-
-  const generate = useCallback(async (description: string): Promise<Program> => {
+  const generate = useCallback(async (description: string, details: IntakeDetails = {}, options: PromptOptions = {}): Promise<Program> => {
     setStatus('generating');
     setError(null);
 
     try {
-      const messages = buildPrompt(description);
+      const messages = buildPrompt(description, details, options);
 
       // Convert chat messages to Gemini format
       const systemInstruction = messages.find(m => m.role === 'system')?.content || '';
@@ -114,6 +102,7 @@ export function useWebLLM(): UseWebLLMReturn {
 
       let program = parseProgram(output);
       program.searchQuery = description;
+      program.createdAt = new Date().toISOString();
       program = matchVideos(program);
 
       setStatus('ready');
@@ -122,9 +111,9 @@ export function useWebLLM(): UseWebLLMReturn {
       setStatus('error');
       const message = err instanceof Error ? err.message : 'Generation failed';
       setError(message);
-      throw new Error(message);
+      throw err instanceof SafetyStopError ? err : new Error(message);
     }
   }, []);
 
-  return { status, progress, progressText, error, initModel, generate };
+  return { status, error, generate };
 }

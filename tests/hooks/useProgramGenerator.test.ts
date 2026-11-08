@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useWebLLM } from '../../src/hooks/useWebLLM';
+import { useProgramGenerator } from '../../src/hooks/useProgramGenerator';
 
 const program = { weeks: [{ exercises: [{ name: 'Heel Slides', instructions: ['Slide your heel.'] }] }] };
 const success = {
@@ -17,7 +17,7 @@ describe('AI request recovery', () => {
   it('retries rate limits with backoff and reads the final text instead of thought parts', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({ ok: false, status: 429 }).mockResolvedValue(success);
     vi.stubGlobal('fetch', fetchMock);
-    const { result } = renderHook(() => useWebLLM());
+    const { result } = renderHook(() => useProgramGenerator());
     await act(async () => {
       const pending = result.current.generate('Synthetic input');
       await vi.runAllTimersAsync();
@@ -30,7 +30,7 @@ describe('AI request recovery', () => {
   it('stops after three service failures and reports an actionable error', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 503 });
     vi.stubGlobal('fetch', fetchMock);
-    const { result } = renderHook(() => useWebLLM());
+    const { result } = renderHook(() => useProgramGenerator());
     await act(async () => {
       const pending = result.current.generate('Synthetic input').catch((error: Error) => error);
       await vi.runAllTimersAsync();
@@ -45,7 +45,7 @@ describe('AI request recovery', () => {
       options.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
     }));
     vi.stubGlobal('fetch', fetchMock);
-    const { result } = renderHook(() => useWebLLM());
+    const { result } = renderHook(() => useProgramGenerator());
     await act(async () => {
       const pending = result.current.generate('Synthetic input').catch((error: Error) => error);
       await vi.runAllTimersAsync();

@@ -1,22 +1,20 @@
 import React, { useState } from 'react';
 import { Exercise } from '../../types';
 import { VideoPlayer } from './VideoPlayer';
+import { videoSearchUrl } from '../../lib/videoMatcher';
+import { brand } from '../../theme';
 
-const brand = {
-  forest: '#1B3A2D',
-  sage: '#6B8F71',
-  mint: '#A8D5BA',
-  cream: '#FAF6F1',
-  warm: '#F0E6D8',
-  terracotta: '#C4704B',
-  charcoal: '#2C2C2C',
-  stone: '#8C8577',
-};
 
 interface ExerciseCardProps {
   exercise: Exercise;
   isCompleted: boolean;
   onToggleComplete: () => void;
+}
+
+function formatVolume({ sets, reps }: Exercise): string {
+  if (sets && reps) return `${sets} \u00d7 ${reps}`;
+  if (sets) return `${sets} ${sets === 1 ? 'set' : 'sets'}`;
+  return `${reps} reps`;
 }
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({
@@ -53,7 +51,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h4 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 17, color: brand.forest, margin: 0, lineHeight: 1.3 }}>{exercise.name}</h4>
+            <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 17, color: brand.forest, margin: 0, lineHeight: 1.3 }}>{exercise.name}</h3>
             <p style={{ fontSize: 13, color: brand.stone, marginTop: 6, lineHeight: 1.6 }}>{exercise.description}</p>
           </div>
           <button
@@ -61,7 +59,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             aria-label={`Mark ${exercise.name} complete`}
             aria-pressed={isCompleted}
             style={{
-              flexShrink: 0, width: 28, height: 28, borderRadius: 8,
+              flexShrink: 0, width: 32, height: 32, borderRadius: 8,
               border: `2px solid ${isCompleted ? brand.sage : brand.warm}`,
               background: isCompleted ? brand.sage : 'transparent',
               color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -81,9 +79,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           <span style={{ padding: '3px 12px', borderRadius: 100, fontSize: 11, fontWeight: 500, background: diff.bg, color: diff.text, border: `1px solid ${diff.border}` }}>
             {exercise.difficulty}
           </span>
-          {exercise.sets && exercise.reps && (
+          {(exercise.sets || exercise.reps) && (
             <span style={{ padding: '3px 12px', borderRadius: 100, fontSize: 11, fontWeight: 500, background: brand.cream, color: brand.forest, border: `1px solid ${brand.warm}` }}>
-              {exercise.sets} &times; {exercise.reps}
+              {formatVolume(exercise)}
             </span>
           )}
           {exercise.duration && (
@@ -112,6 +110,20 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               {showVideo ? 'Hide Video' : 'Watch Video'}
             </button>
           )}
+          {!exercise.videoUrl && (
+            <a
+              href={videoSearchUrl(exercise)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                flex: 1, padding: '10px 20px', borderRadius: 100, border: `2px solid ${brand.terracotta}`,
+                color: brand.terracotta, fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+                textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box',
+              }}
+            >
+              Find a Video<span className="sr-only"> for {exercise.name} on YouTube (opens in a new tab)</span>
+            </a>
+          )}
           <button
             onClick={() => setShowInstructions(!showInstructions)}
             aria-expanded={showInstructions}
@@ -137,7 +149,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
       {showInstructions && (
         <div style={{ padding: '0 20px 20px' }}>
           <div style={{ background: brand.cream, borderRadius: 14, padding: 16, border: `1px solid ${brand.warm}` }}>
-            <h5 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 15, color: brand.forest, margin: '0 0 12px' }}>Instructions</h5>
+            <h4 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 15, color: brand.forest, margin: '0 0 12px' }}>Instructions</h4>
             <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {exercise.instructions.map((instruction, index) => (
                 <li key={index} style={{ display: 'flex', gap: 10, fontSize: 13, color: brand.charcoal, lineHeight: 1.6 }}>

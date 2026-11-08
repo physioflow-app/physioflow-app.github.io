@@ -70,3 +70,17 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Program header stays visible while scrolling on larger screens; on phones it
+   would take up too much of the viewport. */
+.program-header {
+  position: sticky;
+  top: var(--header-height, 64px);
+}
+@media (max-width: 640px) {
+  .program-header { position: static; }
+}

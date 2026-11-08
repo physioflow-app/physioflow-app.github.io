@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+
+const tokens = JSON.parse(readFileSync(new URL('./src/theme/tokens.json', import.meta.url), 'utf8'));
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -11,16 +15,7 @@ export default {
         body: ["'DM Sans'", 'sans-serif'],
       },
       colors: {
-        brand: {
-          forest: '#1B3A2D',
-          sage: '#6B8F71',
-          mint: '#A8D5BA',
-          cream: '#FAF6F1',
-          warm: '#F0E6D8',
-          terracotta: '#C4704B',
-          charcoal: '#2C2C2C',
-          stone: '#8C8577',
-        },
+        brand: tokens,
       },
       boxShadow: {
         'card': '0 1px 3px rgba(27,58,45,0.06), 0 1px 2px rgba(27,58,45,0.04)',
