@@ -1,1 +1,16 @@
 https://physioflow-app.github.io/
+https://physioflow-app.github.io/program/neck
+https://physioflow-app.github.io/program/shoulders
+https://physioflow-app.github.io/program/chest
+https://physioflow-app.github.io/program/arms
+https://physioflow-app.github.io/program/core
+https://physioflow-app.github.io/program/hips
+https://physioflow-app.github.io/program/quadriceps
+https://physioflow-app.github.io/program/knees
+https://physioflow-app.github.io/program/shins
+https://physioflow-app.github.io/program/ankles
+https://physioflow-app.github.io/program/upper-back
+https://physioflow-app.github.io/program/lower-back
+https://physioflow-app.github.io/program/glutes
+https://physioflow-app.github.io/program/hamstrings
+https://physioflow-app.github.io/program/calves-back
