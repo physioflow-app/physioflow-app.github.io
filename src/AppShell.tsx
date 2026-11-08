@@ -1,18 +1,9 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
-import { HomePage } from './pages/HomePage';
-import { ProgramPage } from './pages/ProgramPage';
+import { HomePage, ImportPage, MessagePage, PlanPage, ProgramPage, SharedPage } from './pages';
+import { SHARE_PATH } from './lib/share';
+import { brand } from './theme';
 
-const brand = {
-  forest: '#1B3A2D',
-  sage: '#6B8F71',
-  mint: '#A8D5BA',
-  cream: '#FAF6F1',
-  warm: '#F0E6D8',
-  terracotta: '#C4704B',
-  charcoal: '#2C2C2C',
-  stone: '#8C8577',
-};
 
 function LogoMark({ size = 36, color = brand.mint }: { size?: number; color?: string }) {
   return (
@@ -27,12 +18,29 @@ function LogoMark({ size = 36, color = brand.mint }: { size?: number; color?: st
   );
 }
 
+/** Publishes the header's height so sticky elements below it line up on any screen size. */
+function useHeaderHeight() {
+  const header = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const element = header.current;
+    if (!element) return;
+    const update = () => document.documentElement.style.setProperty('--header-height', `${element.offsetHeight}px`);
+    update();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return header;
+}
+
 const AppShell: React.FC = () => {
+  const header = useHeaderHeight();
   return (
       <div style={{ minHeight: '100vh', background: brand.cream, display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
-        <header style={{ background: brand.forest, position: 'sticky', top: 0, zIndex: 50 }}>
-          <div style={{ maxWidth: 960, margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <header ref={header} style={{ background: brand.forest, position: 'sticky', top: 0, zIndex: 50 }}>
+          <div style={{ maxWidth: 960, margin: '0 auto', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
               <LogoMark size={36} />
               <div style={{ lineHeight: 1.1 }}>
@@ -52,6 +60,10 @@ const AppShell: React.FC = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/program/:bodyPartId" element={<ProgramPage />} />
+            <Route path="/plan/:planId" element={<PlanPage />} />
+            <Route path={SHARE_PATH} element={<SharedPage />} />
+            <Route path="/import" element={<ImportPage />} />
+            <Route path="*" element={<MessagePage title="Page Not Found">That page does not exist.</MessagePage>} />
           </Routes>
         </main>
 

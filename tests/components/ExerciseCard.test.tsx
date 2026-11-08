@@ -114,24 +114,23 @@ describe('ExerciseCard', () => {
   });
 
   it('should call onToggleComplete when checkbox is clicked', () => {
-    render(
-      <ExerciseCard
-        exercise={mockExercise}
-        isCompleted={false}
-        onToggleComplete={mockOnToggleComplete}
-      />
-    );
+    render(<ExerciseCard exercise={mockExercise} isCompleted={false} onToggleComplete={mockOnToggleComplete} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Test Exercise complete' }));
+    expect(mockOnToggleComplete).toHaveBeenCalledTimes(1);
+  });
 
-    // Find the completion button (the checkbox-like button)
-    const buttons = screen.getAllByRole('button');
-    const completeButton = buttons.find((btn) =>
-      btn.style.borderRadius === '8px' && btn.style.width === '28px'
-    );
+  it('offers a video search when no verified video is available', () => {
+    render(<ExerciseCard exercise={{ ...mockExercise, videoUrl: '' }} isCompleted={false} onToggleComplete={mockOnToggleComplete} />);
+    const link = screen.getByRole('link', { name: /Find a Video/ });
+    expect(link).toHaveAttribute('href', expect.stringContaining('youtube.com/results?search_query=Bob%20and%20Brad%20Test%20Exercise'));
+    expect(link).toHaveAttribute('target', '_blank');
+  });
 
-    if (completeButton) {
-      fireEvent.click(completeButton);
-      expect(mockOnToggleComplete).toHaveBeenCalledTimes(1);
-    }
+  it('shows sets or reps on their own', () => {
+    const { rerender } = render(<ExerciseCard exercise={{ ...mockExercise, reps: undefined }} isCompleted={false} onToggleComplete={mockOnToggleComplete} />);
+    expect(screen.getByText('3 sets')).toBeInTheDocument();
+    rerender(<ExerciseCard exercise={{ ...mockExercise, sets: undefined }} isCompleted={false} onToggleComplete={mockOnToggleComplete} />);
+    expect(screen.getByText('10 reps')).toBeInTheDocument();
   });
 
   it('should show checkmark when completed', () => {

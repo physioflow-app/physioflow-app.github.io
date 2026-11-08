@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { parseProgram } from '../../src/lib/programParser';
-import { matchVideos } from '../../src/lib/videoMatcher';
+import { findVideo, matchVideos, videoSearchUrl } from '../../src/lib/videoMatcher';
+import { buildPrompt } from '../../src/lib/promptBuilder';
+import { exerciseCatalog } from '../../src/lib/exerciseCatalog';
+import { SafetyStopError } from '../../src/lib/safety';
 import { getAllPrograms } from '../../src/data/exercises';
 
 const exercise = { name: 'Glute Bridge', instructions: ['Lie down.', 'Lift your hips.'] };
@@ -33,6 +36,36 @@ describe('AI program validation and video matching', () => {
     expect(matched.weeks[0].exercises[0].videoUrl).toMatch(/^https:\/\/www.youtube.com\/embed\//);
     expect(matched.weeks[0].exercises[1].videoUrl).toBe('');
     expect(program.weeks[0].exercises[0].videoUrl).toBe('');
+  });
+});
+
+describe('AI program extras', () => {
+  it('turns a red-flag response into a safety stop', () => {
+    expect(() => parseProgram(JSON.stringify({ redFlag: true, reason: 'See a doctor.' }))).toThrow(SafetyStopError);
+  });
+
+  it('keeps a valid sessions-per-week target and ignores invalid ones', () => {
+    expect(parseProgram(JSON.stringify({ sessionsPerWeek: 5, weeks: [{ exercises: [exercise] }] })).sessionsPerWeek).toBe(5);
+    expect(parseProgram(JSON.stringify({ sessionsPerWeek: 30, weeks: [{ exercises: [exercise] }] })).sessionsPerWeek).toBeUndefined();
+  });
+
+  it('matches reworded catalog names only when unambiguous', () => {
+    expect(findVideo('Hip Flexor')).toBe(findVideo('Hip Flexor Stretch'));
+    expect(findVideo('hip flexor stretch exercise')).toBe(findVideo('Hip Flexor Stretch'));
+    expect(findVideo('Hip Flexor Stretch')).toMatch(/youtube/);
+    expect(findVideo('Standing')).toBe('');
+    expect(videoSearchUrl({ name: 'Wall Slides' })).toBe('https://www.youtube.com/results?search_query=Bob%20and%20Brad%20Wall%20Slides');
+  });
+
+  it('lists every catalog exercise in the prompt, with patient details', () => {
+    const [system, user] = buildPrompt('Sore knee', { painLevel: 2, equipment: ['none'], fitnessLevel: 'beginner' }, { clearedByClinician: true });
+    for (const entry of exerciseCatalog) expect(system.content).toContain(entry.name);
+    expect(system.content).toContain('"redFlag": true');
+    expect(user.content).toContain('Current pain: 2/10');
+    expect(user.content).toContain('bodyweight only');
+    expect(user.content).toContain('Fitness level: beginner');
+    expect(user.content).toContain('cleared them for exercise');
+    expect(buildPrompt('Sore knee')[1].content).toBe('Create a physical therapy program for: Sore knee');
   });
 });
 

@@ -1,0 +1,21 @@
+# Copy to wrangler.toml, then:
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler deploy
+name = "pt-gemini-proxy"
+main = "index.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+# Comma-separated. Add http://localhost:5173 only for local testing against the deployed Worker.
+ALLOWED_ORIGINS = "https://physioflow-app.github.io"
+# Set to the model the current Worker uses.
+GEMINI_MODEL = "gemini-2.5-flash"
+
+# Per-IP limit: 10 generations per minute.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60

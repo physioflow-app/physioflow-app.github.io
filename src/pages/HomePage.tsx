@@ -1,76 +1,85 @@
-import React, { useState, useCallback } from 'react';
-import { Program } from '../types';
-import { useWebLLM } from '../hooks/useWebLLM';
+import React, { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { IntakeDetails } from '../types';
+import { useProgramGenerator } from '../hooks/useProgramGenerator';
 import { useAIPrograms } from '../hooks/useAIPrograms';
+import { useProgress } from '../hooks/useProgress';
+import { writeLocalStorage } from '../hooks/useLocalStorage';
+import { PROGRESS_STORAGE_KEY } from '../hooks/useProgress';
+import { PROGRAMS_STORAGE_KEY } from '../hooks/useAIPrograms';
+import { usePageMeta } from '../hooks/usePageMeta';
 import { AIInputForm } from '../components/AIProgram/AIInputForm';
-import { ModelLoadingProgress } from '../components/AIProgram/ModelLoadingProgress';
+import { GeneratingIndicator } from '../components/AIProgram/GeneratingIndicator';
 import { AIProgramHistory } from '../components/AIProgram/AIProgramHistory';
-import { ProgramView } from '../components/Program';
+import { SafetyCheck } from '../components/AIProgram/SafetyCheck';
+import { ProgramLibrary } from '../components/Program/ProgramLibrary';
+import { RedFlag, SafetyStopError, screenForRedFlags } from '../lib/safety';
+import { Backup, mergeBackup } from '../lib/backup';
+import { PromptOptions } from '../lib/promptBuilder';
+import { brand, fonts } from '../theme';
 
-const brand = {
-  forest: '#1B3A2D',
-  sage: '#6B8F71',
-  mint: '#A8D5BA',
-  cream: '#FAF6F1',
-  warm: '#F0E6D8',
-  terracotta: '#C4704B',
-  charcoal: '#2C2C2C',
-  stone: '#8C8577',
-};
+type PageState = 'input' | 'loading' | 'safety';
 
-type PageState = 'input' | 'loading' | 'result';
+interface Request {
+  description: string;
+  details: IntakeDetails;
+}
 
 export const HomePage: React.FC = () => {
-  const { status, progress, progressText, generate } = useWebLLM();
+  usePageMeta();
+  const navigate = useNavigate();
+  const { generate } = useProgramGenerator();
   const { programs: savedPrograms, saveProgram, deleteProgram } = useAIPrograms();
+  const { userProgress } = useProgress();
   const [pageState, setPageState] = useState<PageState>('input');
-  const [currentProgram, setCurrentProgram] = useState<Program | null>(null);
+  const [request, setRequest] = useState<Request | null>(null);
+  const [safety, setSafety] = useState<{ flags: RedFlag[]; reason?: string }>({ flags: [] });
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  const handleSubmit = useCallback(async (description: string) => {
+  const run = useCallback(async ({ description, details }: Request, options: PromptOptions = {}) => {
     setGenerationError(null);
     setPageState('loading');
     try {
-      const program = await generate(description);
-      setCurrentProgram(program);
-      setPageState('result');
+      const program = await generate(description, details, options);
+      // Programs are saved as soon as they are created, so a refresh or the Back button never loses one.
+      saveProgram(program);
+      navigate(`/plan/${program.id}`);
     } catch (err) {
+      if (err instanceof SafetyStopError) {
+        setSafety({ flags: [], reason: err.message });
+        setPageState('safety');
+        return;
+      }
       setGenerationError(err instanceof Error ? err.message : 'Failed to generate program');
       setPageState('input');
     }
-  }, [generate]);
+  }, [generate, saveProgram, navigate]);
 
-  const handleSave = useCallback(() => {
-    if (currentProgram) saveProgram(currentProgram);
-  }, [currentProgram, saveProgram]);
+  const handleSubmit = useCallback((description: string, details: IntakeDetails) => {
+    const next = { description, details };
+    setRequest(next);
+    const flags = screenForRedFlags(description, details.painLevel);
+    if (flags.length) {
+      setSafety({ flags });
+      setPageState('safety');
+      return;
+    }
+    run(next);
+  }, [run]);
 
-  const handleGenerateAnother = useCallback(() => {
-    setCurrentProgram(null);
-    setPageState('input');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  const handleSelectSaved = useCallback((program: Program) => {
-    setCurrentProgram(program);
-    setPageState('result');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  const handleBackFromResult = useCallback(() => {
-    setCurrentProgram(null);
-    setPageState('input');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  const isLoading = pageState === 'loading';
-  const isSaved = savedPrograms.some((program) => program.id === currentProgram?.id);
+  const handleImport = useCallback((backup: Backup) => {
+    const merged = mergeBackup({ programs: savedPrograms, progress: userProgress }, backup);
+    writeLocalStorage(PROGRAMS_STORAGE_KEY, merged.programs);
+    writeLocalStorage(PROGRESS_STORAGE_KEY, merged.progress);
+    return merged.added;
+  }, [savedPrograms, userProgress]);
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto' }}>
       {/* Hero Section */}
-      <div style={{ padding: '48px 24px 24px' }}>
+      <div style={{ padding: 'clamp(28px, 6vw, 48px) 16px 24px' }}>
         <div style={{
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: fonts.body,
           fontSize: 11,
           letterSpacing: '0.2em',
           textTransform: 'uppercase' as const,
@@ -81,7 +90,7 @@ export const HomePage: React.FC = () => {
           AI-Powered Recovery
         </div>
         <h1 style={{
-          fontFamily: "'DM Serif Display', serif",
+          fontFamily: fonts.display,
           fontSize: 'clamp(32px, 5vw, 48px)',
           color: brand.forest,
           lineHeight: 1.1,
@@ -95,75 +104,59 @@ export const HomePage: React.FC = () => {
         </p>
       </div>
 
-      <div style={{ padding: '0 24px', display: 'flex', flexDirection: 'column' as const, gap: 20 }}>
-        {/* Result state */}
-        {pageState === 'result' && currentProgram && (
-          <div className="animate-fade-in">
-            <ProgramView
-              program={currentProgram}
-              onBack={handleBackFromResult}
-            />
-            <div style={{ padding: '16px 0', display: 'flex', gap: 12 }}>
-              <button
-                onClick={handleSave}
-                disabled={isSaved}
-                style={{ flex: 1, padding: '14px 32px', borderRadius: 100, border: 'none', background: brand.forest, color: 'white', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-              >
-                {isSaved ? 'Program Saved' : 'Save Program'}
-              </button>
-              <button
-                onClick={handleGenerateAnother}
-                style={{ flex: 1, padding: '14px 32px', borderRadius: 100, border: `2px solid ${brand.forest}`, background: 'transparent', color: brand.forest, fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-              >
-                Generate Another
-              </button>
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column' as const, gap: 20 }}>
+        {pageState === 'loading' && <GeneratingIndicator />}
+
+        {pageState === 'safety' && request && (
+          <SafetyCheck
+            flags={safety.flags}
+            reason={safety.reason}
+            onEdit={() => setPageState('input')}
+            onContinue={() => run(request, { clearedByClinician: true })}
+          />
+        )}
+
+        {/* Kept mounted while hidden so the description is preserved for a retry. */}
+        <div hidden={pageState !== 'input'}>
+          {generationError && (
+            <div role="alert" style={{ background: brand.dangerBg, border: `1px solid ${brand.dangerBorder}`, borderRadius: 16, padding: 16, color: brand.danger, fontSize: 14, fontFamily: fonts.body, marginBottom: 20 }}>
+              {generationError}
+              <span style={{ display: 'block', marginTop: 6, color: brand.charcoal }}>
+                While you wait, you can start one of the ready-made programs below.
+              </span>
             </div>
-          </div>
-        )}
+          )}
+          <AIInputForm onSubmit={handleSubmit} isDisabled={pageState === 'loading'} />
+        </div>
 
-        {isLoading && <ModelLoadingProgress status={status} progress={progress} progressText={progressText} />}
+        <AIProgramHistory programs={savedPrograms} progress={userProgress} onDelete={deleteProgram} onImport={handleImport} />
 
-        {pageState !== 'result' && (
-          <div hidden={isLoading}>
-            {generationError && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 16, padding: 16, color: '#b91c1c', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>
-                {generationError}
-              </div>
-            )}
-            <AIInputForm onSubmit={handleSubmit} isDisabled={isLoading} />
-          </div>
-        )}
+        <ProgramLibrary />
 
-        {pageState === 'input' && (
-          <AIProgramHistory programs={savedPrograms} onSelect={handleSelectSaved} onDelete={deleteProgram} />
-        )}
-        {pageState === 'input' && (
-          <section aria-labelledby="about-physioflow" style={{ padding: '16px 0 36px', color: brand.charcoal, fontSize: 14, lineHeight: 1.8 }}>
-            <h2 id="about-physioflow" style={{ fontFamily: "'DM Serif Display', serif", fontSize: 26, color: brand.forest, lineHeight: 1.3 }}>
-              Free personalized exercise programs
-            </h2>
-            <p>
-              PhysioFlow helps you build a stretching, strengthening, and mobility routine
-              around the issue you describe. Get a progressive, multi-week program for
-              everyday stiffness or movement limitations in areas such as your neck,
-              shoulders, back, hips, and knees.
-            </p>
-            <h3 style={{ fontSize: 20, color: brand.forest }}>How PhysioFlow works</h3>
-            <ol style={{ paddingLeft: 22 }}>
-              <li>Describe your issue and the movements you find difficult.</li>
-              <li>Review your AI-generated program, step-by-step instructions, and available video demonstrations.</li>
-              <li>Save the program, follow the weekly progression, and track completed exercises in your browser.</li>
-            </ol>
-            <p>
-              PhysioFlow is free to use and does not require an account. It provides
-              educational exercise guidance and does not diagnose conditions or replace
-              a healthcare professional. Consult a qualified professional before starting
-              an exercise program.
-            </p>
-          </section>
-        )}
+        <section aria-labelledby="about-physioflow" style={{ padding: '16px 0 36px', color: brand.charcoal, fontSize: 14, lineHeight: 1.8 }}>
+          <h2 id="about-physioflow" style={{ fontFamily: fonts.display, fontSize: 26, color: brand.forest, lineHeight: 1.3 }}>
+            Free personalized exercise programs
+          </h2>
+          <p>
+            PhysioFlow helps you build a stretching, strengthening, and mobility routine
+            around the issue you describe. Get a progressive, multi-week program for
+            everyday stiffness or movement limitations in areas such as your neck,
+            shoulders, back, hips, and knees.
+          </p>
+          <h3 style={{ fontSize: 20, color: brand.forest }}>How PhysioFlow works</h3>
+          <ol style={{ paddingLeft: 22 }}>
+            <li>Describe your issue, and optionally your pain level, equipment, and available time.</li>
+            <li>Review your AI-generated program, step-by-step instructions, and video demonstrations.</li>
+            <li>Log each session and your pain level. Weeks advance as you hit your session goal, and your progress stays in your browser.</li>
+          </ol>
+          <p>
+            PhysioFlow is free to use and does not require an account. It provides
+            educational exercise guidance and does not diagnose conditions or replace
+            a healthcare professional. Consult a qualified professional before starting
+            an exercise program.
+          </p>
+        </section>
       </div>
-
     </div>
   );
 };

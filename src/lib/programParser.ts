@@ -1,4 +1,5 @@
 import { Program, WeekProgram, Exercise } from '../types';
+import { SafetyStopError } from './safety';
 
 type ObjectValue = Record<string, unknown>;
 
@@ -23,7 +24,14 @@ function count(value: unknown): number | undefined {
   return value;
 }
 
-export function parseProgram(llmOutput: string): Program {
+export interface ParseOptions {
+  /** Keep a known program ID (e.g. when opening a shared program) instead of creating one. */
+  id?: string;
+}
+
+const PROGRAM_ID = /^ai-[\w-]{1,64}$/;
+
+export function parseProgram(llmOutput: string, options: ParseOptions = {}): Program {
   let parsed: unknown;
   try {
     parsed = JSON.parse(extractJSON(llmOutput));
@@ -31,10 +39,14 @@ export function parseProgram(llmOutput: string): Program {
     throw new Error('Failed to parse AI output as JSON. Please try again.');
   }
   const raw = object(parsed);
+  if (raw.redFlag === true) {
+    throw new SafetyStopError(text(raw.reason,
+      'What you described may need to be checked by a clinician before you start exercising.'));
+  }
   if (!Array.isArray(raw.weeks) || raw.weeks.length === 0) {
     throw new Error('Program must contain at least one week of exercises.');
   }
-  const programId = `ai-${crypto.randomUUID()}`;
+  const programId = options.id && PROGRAM_ID.test(options.id) ? options.id : `ai-${crypto.randomUUID()}`;
   const weeks: WeekProgram[] = raw.weeks.map((value, weekIdx) => {
     const rawWeek = object(value);
     if (!Array.isArray(rawWeek.exercises) || rawWeek.exercises.length === 0) {
@@ -75,11 +87,16 @@ export function parseProgram(llmOutput: string): Program {
     description: text(raw.description, 'A personalized physical therapy program.'),
     duration: weeks.length,
     weeks,
+    sessionsPerWeek: sessionCount(raw.sessionsPerWeek),
     isAIGenerated: true,
     searchQuery: '',
     whyItExists: text(raw.whyItExists) || undefined,
     howExercisesHelp: text(raw.howExercisesHelp) || undefined,
   };
+}
+
+function sessionCount(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 7 ? value : undefined;
 }
 
 function extractJSON(value: string): string {
