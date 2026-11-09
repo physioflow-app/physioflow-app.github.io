@@ -88,9 +88,9 @@ describe('complete application flow', () => {
     fireEvent.click(screen.getByRole('link', { name: /Test knee recovery/ }));
 
     vi.mocked(window.confirm).mockReturnValueOnce(false);
-    fireEvent.click(screen.getByRole('button', { name: 'Reset', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
     expect(screen.getByText('13%')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Reset', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
     expect(screen.getByRole('heading', { name: 'Heel Slides' })).toBeInTheDocument();
     expect(screen.getByText('0%')).toBeInTheDocument();
 
@@ -236,5 +236,25 @@ describe('moving from the old site', () => {
     window.history.replaceState(null, '', '/import#next=//evil.test');
     await act(async () => { render(<App />); });
     await waitFor(() => expect(window.location.pathname).toBe('/'));
+  });
+});
+
+describe('returning users', () => {
+  it('lists started ready-made programs first and collapses the program intro once started', () => {
+    window.history.replaceState(null, '', '/program/neck');
+    const app = render(<App />);
+    const about = screen.getByText('About this program').closest('details')!;
+    expect(about).toHaveAttribute('open');
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Chin Tucks complete' }));
+    app.unmount();
+
+    render(<App />);
+    expect(screen.getByText('About this program').closest('details')).not.toHaveAttribute('open');
+    fireEvent.click(screen.getByRole('button', { name: 'Back', exact: true }));
+    const yourPrograms = screen.getByRole('heading', { name: 'Your Programs' });
+    expect(yourPrograms.compareDocumentPosition(screen.getByRole('textbox')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Neck Pain Relief & Strengthening Neck · 4 weeks/ })).toHaveAttribute('href', '/program/neck');
+    expect(screen.getByText('Trained today')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Delete Neck Pain/ })).not.toBeInTheDocument();
   });
 });

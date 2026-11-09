@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Exercise } from '../../types';
 import { VideoPlayer } from './VideoPlayer';
 import { videoSearchUrl } from '../../lib/videoMatcher';
-import { brand } from '../../theme';
-
+import { brand, fonts } from '../../theme';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -12,149 +11,132 @@ interface ExerciseCardProps {
 }
 
 function formatVolume({ sets, reps }: Exercise): string {
-  if (sets && reps) return `${sets} \u00d7 ${reps}`;
+  if (sets && reps) return `${sets} × ${reps}`;
   if (sets) return `${sets} ${sets === 1 ? 'set' : 'sets'}`;
   return `${reps} reps`;
 }
 
-export const ExerciseCard: React.FC<ExerciseCardProps> = ({
-  exercise,
-  isCompleted,
-  onToggleComplete,
-}) => {
+const DIFFICULTY = {
+  beginner: { bg: `${brand.sage}18`, text: brand.forest },
+  intermediate: { bg: '#fef3c7', text: '#92400e' },
+  advanced: { bg: `${brand.terracotta}18`, text: '#9a4a28' },
+} as const;
+
+const chip: React.CSSProperties = {
+  padding: '3px 10px', borderRadius: 100, fontSize: 12, background: brand.cream, color: brand.charcoal,
+  border: `1px solid ${brand.warm}`, whiteSpace: 'nowrap',
+};
+
+const smallButton: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 100,
+  fontFamily: fonts.body, fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', lineHeight: 1.2,
+};
+
+const CheckIcon = () => (
+  <svg aria-hidden="true" style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  </svg>
+);
+
+export const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, isCompleted, onToggleComplete }) => {
   const [showVideo, setShowVideo] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
-
-  const getDifficultyColor = (d: string) => {
-    switch (d) {
-      case 'beginner': return { bg: `${brand.sage}18`, text: brand.sage, border: `${brand.sage}40` };
-      case 'intermediate': return { bg: '#fef3c7', text: '#b45309', border: '#fcd34d' };
-      case 'advanced': return { bg: `${brand.terracotta}15`, text: brand.terracotta, border: `${brand.terracotta}40` };
-      default: return { bg: brand.warm, text: brand.stone, border: brand.warm };
-    }
-  };
-
-  const diff = getDifficultyColor(exercise.difficulty);
+  const difficulty = DIFFICULTY[exercise.difficulty] ?? DIFFICULTY.beginner;
 
   return (
-    <div style={{
-      background: 'white',
-      borderRadius: 20,
-      overflow: 'hidden',
-      border: `1px solid ${brand.warm}`,
-      transition: 'all 0.2s',
+    <article style={{
+      background: isCompleted ? '#F4F8F4' : 'white',
+      borderRadius: 18,
+      border: `1px solid ${isCompleted ? `${brand.sage}66` : brand.warm}`,
+      borderLeft: `4px solid ${isCompleted ? brand.sage : brand.terracotta}`,
+      transition: 'background 0.2s, border-color 0.2s',
     }}>
-      {/* Top color strip */}
-      <div style={{ height: 4, background: isCompleted ? brand.sage : brand.terracotta }} />
-
-      <div style={{ padding: 20 }}>
-        {/* Header */}
+      <div style={{ padding: 'clamp(14px, 3.5vw, 20px)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 17, color: brand.forest, margin: 0, lineHeight: 1.3 }}>{exercise.name}</h3>
-            <p style={{ fontSize: 13, color: brand.stone, marginTop: 6, lineHeight: 1.6 }}>{exercise.description}</p>
+            <h3 style={{ fontFamily: fonts.display, fontSize: 18, color: brand.forest, margin: 0, lineHeight: 1.3 }}>{exercise.name}</h3>
+            {exercise.description && (
+              <p style={{ fontSize: 14, color: brand.stone, margin: '4px 0 0', lineHeight: 1.55 }}>{exercise.description}</p>
+            )}
           </div>
           <button
+            type="button"
             onClick={onToggleComplete}
             aria-label={`Mark ${exercise.name} complete`}
             aria-pressed={isCompleted}
             style={{
-              flexShrink: 0, width: 32, height: 32, borderRadius: 8,
+              ...smallButton,
+              flexShrink: 0,
+              padding: '7px 14px 7px 10px',
               border: `2px solid ${isCompleted ? brand.sage : brand.warm}`,
-              background: isCompleted ? brand.sage : 'transparent',
-              color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: isCompleted ? brand.sage : 'white',
+              color: isCompleted ? 'white' : brand.forest,
               transition: 'all 0.2s',
             }}
           >
-            {isCompleted && (
-              <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+            {isCompleted ? <CheckIcon /> : (
+              <span aria-hidden="true" style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${brand.stone}`, boxSizing: 'border-box' }} />
             )}
+            {isCompleted ? 'Done' : 'Mark done'}
           </button>
         </div>
 
-        {/* Metadata badges */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-          <span style={{ padding: '3px 12px', borderRadius: 100, fontSize: 11, fontWeight: 500, background: diff.bg, color: diff.text, border: `1px solid ${diff.border}` }}>
-            {exercise.difficulty}
-          </span>
-          {(exercise.sets || exercise.reps) && (
-            <span style={{ padding: '3px 12px', borderRadius: 100, fontSize: 11, fontWeight: 500, background: brand.cream, color: brand.forest, border: `1px solid ${brand.warm}` }}>
-              {formatVolume(exercise)}
-            </span>
-          )}
-          {exercise.duration && (
-            <span style={{ padding: '3px 12px', borderRadius: 100, fontSize: 11, fontWeight: 500, background: brand.cream, color: brand.stone, border: `1px solid ${brand.warm}` }}>
-              {exercise.duration}
-            </span>
-          )}
-          <span style={{ padding: '3px 12px', borderRadius: 100, fontSize: 11, background: brand.cream, color: brand.stone, border: `1px solid ${brand.warm}` }}>
-            {exercise.targetArea}
-          </span>
+          {(exercise.sets || exercise.reps) && <span style={{ ...chip, fontWeight: 600, color: brand.forest }}>{formatVolume(exercise)}</span>}
+          {exercise.duration && <span style={{ ...chip, fontWeight: 600, color: brand.forest }}>{exercise.duration}</span>}
+          <span style={chip}>{exercise.targetArea}</span>
+          <span style={{ ...chip, background: difficulty.bg, color: difficulty.text, borderColor: 'transparent' }}>{exercise.difficulty}</span>
         </div>
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-          {exercise.videoUrl && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+          {exercise.videoUrl ? (
             <button
+              type="button"
               onClick={() => setShowVideo(!showVideo)}
               aria-expanded={showVideo}
-              style={{
-                flex: 1, padding: '10px 20px', borderRadius: 100, border: 'none',
-                background: brand.terracotta, color: 'white',
-                fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
+              style={{ ...smallButton, border: 'none', background: brand.terracotta, color: 'white' }}
             >
+              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2.5 1.5v9l8-4.5z" /></svg>
               {showVideo ? 'Hide Video' : 'Watch Video'}
             </button>
-          )}
-          {!exercise.videoUrl && (
+          ) : (
             <a
               href={videoSearchUrl(exercise)}
               target="_blank"
               rel="noopener noreferrer"
-              style={{
-                flex: 1, padding: '10px 20px', borderRadius: 100, border: `2px solid ${brand.terracotta}`,
-                color: brand.terracotta, fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
-                textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box',
-              }}
+              style={{ ...smallButton, border: `1px solid ${brand.warm}`, background: 'white', color: brand.charcoal }}
             >
-              Find a Video<span className="sr-only"> for {exercise.name} on YouTube (opens in a new tab)</span>
+              Find a Video
+              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4.5 2.5h5v5M9.5 2.5 3 9" /></svg>
+              <span className="sr-only"> for {exercise.name} on YouTube (opens in a new tab)</span>
             </a>
           )}
           <button
+            type="button"
             onClick={() => setShowInstructions(!showInstructions)}
             aria-expanded={showInstructions}
-            style={{
-              flex: 1, padding: '10px 20px', borderRadius: 100,
-              border: `2px solid ${brand.forest}`, background: 'transparent',
-              color: brand.forest, fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            }}
+            style={{ ...smallButton, border: `1px solid ${brand.forest}`, background: 'transparent', color: brand.forest }}
           >
             {showInstructions ? 'Hide Steps' : 'View Steps'}
           </button>
         </div>
       </div>
 
-      {/* Video Section */}
       {showVideo && (
-        <div style={{ padding: '0 20px 20px' }}>
+        <div style={{ padding: '0 clamp(14px, 3.5vw, 20px) clamp(14px, 3.5vw, 20px)' }}>
           <VideoPlayer videoUrl={exercise.videoUrl} title={exercise.name} />
         </div>
       )}
 
-      {/* Instructions Section */}
       {showInstructions && (
-        <div style={{ padding: '0 20px 20px' }}>
+        <div style={{ padding: '0 clamp(14px, 3.5vw, 20px) clamp(14px, 3.5vw, 20px)' }}>
           <div style={{ background: brand.cream, borderRadius: 14, padding: 16, border: `1px solid ${brand.warm}` }}>
-            <h4 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 15, color: brand.forest, margin: '0 0 12px' }}>Instructions</h4>
+            <h4 style={{ fontFamily: fonts.display, fontSize: 15, color: brand.forest, margin: '0 0 12px' }}>Instructions</h4>
             <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {exercise.instructions.map((instruction, index) => (
-                <li key={index} style={{ display: 'flex', gap: 10, fontSize: 13, color: brand.charcoal, lineHeight: 1.6 }}>
-                  <span style={{
-                    flexShrink: 0, width: 22, height: 22, borderRadius: 7,
+                <li key={index} style={{ display: 'flex', gap: 10, fontSize: 14, color: brand.charcoal, lineHeight: 1.6 }}>
+                  <span aria-hidden="true" style={{
+                    flexShrink: 0, width: 22, height: 22, borderRadius: 7, marginTop: 1,
                     background: brand.forest, color: brand.mint,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, fontWeight: 700,
@@ -168,6 +150,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </article>
   );
 };

@@ -9,6 +9,8 @@ interface AIInputFormProps {
   /** Restores a previous description, e.g. after an error or a safety check. */
   initialDescription?: string;
   initialDetails?: IntakeDetails;
+  /** Shown under the form, e.g. a backup import link. */
+  footer?: React.ReactNode;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -25,7 +27,7 @@ const selectStyle: React.CSSProperties = {
   color: brand.charcoal, background: brand.cream, fontFamily: fonts.body,
 };
 
-export const AIInputForm: React.FC<AIInputFormProps> = ({ onSubmit, isDisabled, initialDescription = '', initialDetails = {} }) => {
+export const AIInputForm: React.FC<AIInputFormProps> = ({ onSubmit, isDisabled, initialDescription = '', initialDetails = {}, footer }) => {
   const [description, setDescription] = useState(initialDescription);
   const [details, setDetails] = useState<IntakeDetails>(initialDetails);
 
@@ -50,20 +52,13 @@ export const AIInputForm: React.FC<AIInputFormProps> = ({ onSubmit, isDisabled, 
 
   return (
     <div style={{ background: 'white', borderRadius: 20, padding: 'clamp(18px, 4vw, 28px)', border: `1px solid ${brand.warm}` }}>
-      <h2 style={{ fontFamily: fonts.display, fontSize: 22, color: brand.forest, margin: '0 0 6px' }}>
-        Describe Your Issue
-      </h2>
-      <p style={{ fontSize: 13, color: brand.stone, marginBottom: 16 }}>
-        Tell us about your pain, stiffness, or mobility issue and our AI will create a personalized program.
-      </p>
-
       <form onSubmit={handleSubmit}>
         <label htmlFor="issue-description" className="sr-only">Describe your issue</label>
         <textarea
           id="issue-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="e.g., I have pain in my lower back when bending forward, especially in the morning..."
+          placeholder="e.g. My lower back hurts when I bend forward, especially in the morning"
           disabled={isDisabled}
           maxLength={2000}
           style={{
@@ -74,6 +69,31 @@ export const AIInputForm: React.FC<AIInputFormProps> = ({ onSubmit, isDisabled, 
             boxSizing: 'border-box',
           }}
         />
+
+        <div style={{ marginTop: 10 }}>
+          <p style={{ fontSize: 12, color: brand.stone, margin: '0 0 6px' }}>Or try an example:</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {EXAMPLE_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => setDescription(prompt)}
+                disabled={isDisabled}
+                style={{
+                  padding: '6px 14px', borderRadius: 16,
+                  border: `1px solid ${brand.warm}`, background: 'white',
+                  fontSize: 12, color: brand.stone, cursor: 'pointer',
+                  fontFamily: fonts.body,
+                  opacity: isDisabled ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                  textAlign: 'left' as const,
+                }}
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <details style={{ marginTop: 12, borderRadius: 12, border: `1px solid ${brand.warm}`, padding: '10px 14px' }}>
           <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: brand.forest }}>
@@ -184,30 +204,7 @@ export const AIInputForm: React.FC<AIInputFormProps> = ({ onSubmit, isDisabled, 
         </button>
       </form>
 
-      <div style={{ marginTop: 20 }}>
-        <p style={{ fontSize: 11, color: brand.stone, marginBottom: 8, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>Try an example</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {EXAMPLE_PROMPTS.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => setDescription(prompt)}
-              disabled={isDisabled}
-              style={{
-                padding: '6px 14px', borderRadius: 16,
-                border: `1px solid ${brand.warm}`, background: 'white',
-                fontSize: 12, color: brand.stone, cursor: 'pointer',
-                fontFamily: fonts.body,
-                opacity: isDisabled ? 0.5 : 1,
-                transition: 'all 0.2s',
-                textAlign: 'left' as const,
-              }}
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-      </div>
+      {footer}
     </div>
   );
 };
