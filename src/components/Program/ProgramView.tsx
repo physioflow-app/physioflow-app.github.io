@@ -6,11 +6,10 @@ import {
   completedSessionCount, currentStreak, dateKey, findSession, getSessions, isSessionComplete,
   nextWeekIfComplete, painHistory, painTrend, sessionsPerWeek, totalPercent,
 } from '../../lib/sessions';
-import { PAIN_STOP_THRESHOLD } from '../../lib/safety';
 import { WeekView } from './WeekView';
 import { PainTracker } from './PainTracker';
 import { brand, fonts } from '../../theme';
-import { card, primaryButton } from '../common/styles';
+import { card, primaryButton, textButton } from '../common/styles';
 
 interface ProgramViewProps {
   program: Program;
@@ -18,6 +17,8 @@ interface ProgramViewProps {
   /** Extra controls shown under the program, e.g. share or delete. */
   actions?: React.ReactNode;
 }
+
+const wrap: React.CSSProperties = { maxWidth: 760, margin: '0 auto', padding: '0 16px' };
 
 export const ProgramView: React.FC<ProgramViewProps> = ({ program, onBack, actions }) => {
   const { getProgress, toggleExercise, setPain, setCurrentWeek, resetProgress } = useProgress();
@@ -28,13 +29,13 @@ export const ProgramView: React.FC<ProgramViewProps> = ({ program, onBack, actio
   const currentWeek = Math.min(Math.max(progress?.currentWeek || 1, 1), program.weeks.length);
   const currentWeekData = program.weeks.find((w) => w.week === currentWeek);
   const todaysSession = findSession(sessions, today, currentWeek);
-  const completedToday = todaysSession?.completed ?? [];
   const sessionsThisWeek = completedSessionCount(sessions, program, currentWeek);
   const weekDone = sessionsThisWeek >= target;
   const isLastWeek = currentWeek >= program.weeks.length;
   const streak = currentStreak(sessions, today);
   const history = painHistory(sessions);
   const totalProgress = totalPercent(sessions, program);
+  const hasExplanation = program.isAIGenerated && (program.whyItExists || program.howExercisesHelp);
 
   // Move on to the next week when the user returns after meeting this week's target.
   const checkedAdvance = useRef<string | null>(null);
@@ -50,62 +51,52 @@ export const ProgramView: React.FC<ProgramViewProps> = ({ program, onBack, actio
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: brand.cream }}>
+    <div style={{ background: brand.cream, paddingBottom: 40 }}>
       {/* Header */}
       <div className="program-header" style={{
         background: `linear-gradient(170deg, ${brand.forest} 0%, #244836 100%)`,
         zIndex: 10,
-        boxShadow: '0 4px 20px rgba(27,58,45,0.25)',
+        boxShadow: '0 4px 20px rgba(27,58,45,0.2)',
       }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '14px 16px' }}>
+        <div style={{ ...wrap, paddingTop: 12, paddingBottom: 14 }}>
           <button
             type="button"
             onClick={onBack}
-            style={{ display: 'flex', alignItems: 'center', color: brand.mint, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: fonts.body, marginBottom: 10, opacity: 0.8, padding: 0 }}
+            style={{ display: 'inline-flex', alignItems: 'center', color: brand.mint, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: fonts.body, marginBottom: 8, padding: '4px 0' }}
           >
-            <svg aria-hidden="true" style={{ width: 16, height: 16, marginRight: 6 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg aria-hidden="true" style={{ width: 16, height: 16, marginRight: 4 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
             Back
           </button>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ minWidth: 0 }}>
-              <h1 style={{ fontFamily: fonts.display, fontSize: 'clamp(19px, 4vw, 22px)', color: brand.cream, margin: 0, lineHeight: 1.2 }}>{program.title}</h1>
-              <p style={{ fontSize: 13, color: brand.mint, opacity: 0.8, margin: '4px 0 0' }}>
-                {program.duration} weeks &middot; {target} sessions a week
-                {streak > 0 && <> &middot; <strong style={{ color: brand.cream }}>{streak}-day streak</strong></>}
-              </p>
-            </div>
-            <button type="button" onClick={handleResetProgress} style={{ fontSize: 12, color: brand.mint, opacity: 0.7, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
-              Reset
-            </button>
-          </div>
-
-          <div style={{ marginTop: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 6 }}>
-              <span style={{ color: brand.mint, opacity: 0.8 }}>Program progress</span>
-              <span style={{ color: brand.cream, fontWeight: 700 }}>{totalProgress}%</span>
-            </div>
+          <h1 style={{ fontFamily: fonts.display, fontSize: 'clamp(20px, 4.5vw, 26px)', color: brand.cream, margin: 0, lineHeight: 1.2 }}>{program.title}</h1>
+          <p style={{ fontSize: 13, color: brand.mint, margin: '6px 0 0' }}>
+            {program.duration} weeks &middot; {target} sessions a week
+            {streak > 0 && <> &middot; <strong style={{ color: brand.cream }}>{streak}-day streak</strong></>}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
             <div
               role="progressbar"
               aria-label="Program progress"
               aria-valuenow={totalProgress}
               aria-valuemin={0}
               aria-valuemax={100}
-              style={{ width: '100%', height: 8, borderRadius: 100, background: 'rgba(0,0,0,0.2)' }}
+              style={{ flex: 1, height: 8, borderRadius: 100, background: 'rgba(0,0,0,0.25)' }}
             >
-              <div className="shimmer-bar" style={{ width: `${totalProgress}%`, height: 8, borderRadius: 100, background: `linear-gradient(to right, ${brand.terracotta}, #d4855e)`, transition: 'width 0.5s ease-out' }} />
+              <div style={{ width: `${totalProgress}%`, height: 8, borderRadius: 100, background: `linear-gradient(to right, ${brand.terracotta}, #d4855e)`, transition: 'width 0.5s ease-out' }} />
             </div>
+            <span style={{ color: brand.cream, fontWeight: 700, fontSize: 13, minWidth: 36, textAlign: 'right' }}>{totalProgress}%</span>
           </div>
         </div>
       </div>
 
       {/* Week Navigation */}
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '20px 16px 12px' }}>
-        <div role="tablist" aria-label="Program weeks" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+      <div style={{ ...wrap, paddingTop: 16 }}>
+        <div role="tablist" aria-label="Program weeks" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
           {program.weeks.map((week) => {
             const isActive = currentWeek === week.week;
             const done = Math.min(completedSessionCount(sessions, program, week.week), target);
+            const complete = done >= target;
             return (
               <button
                 key={week.week}
@@ -114,70 +105,48 @@ export const ProgramView: React.FC<ProgramViewProps> = ({ program, onBack, actio
                 aria-selected={isActive}
                 onClick={() => setCurrentWeek(program, week.week)}
                 style={{
-                  flexShrink: 0,
-                  padding: '10px 18px',
-                  borderRadius: 14,
-                  border: isActive ? 'none' : `1px solid ${brand.warm}`,
-                  background: isActive ? brand.terracotta : 'white',
+                  flex: '1 0 72px',
+                  padding: '8px 6px',
+                  borderRadius: 12,
+                  whiteSpace: 'nowrap',
+                  border: `1px solid ${isActive ? brand.forest : brand.warm}`,
+                  background: isActive ? brand.forest : 'white',
                   color: isActive ? 'white' : brand.forest,
                   cursor: 'pointer',
                   fontFamily: fonts.body,
-                  transition: 'all 0.2s',
-                  boxShadow: isActive ? '0 4px 12px rgba(196,112,75,0.3)' : 'none',
+                  transition: 'background 0.2s, color 0.2s',
                 }}
               >
-                <div style={{ fontSize: 12, fontWeight: 700 }}>Week {week.week}</div>
-                <div style={{ fontSize: 10, marginTop: 2, opacity: isActive ? 0.85 : 0.6 }}>{done}/{target} sessions</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>Week {week.week}{complete ? ' ✓' : ''}</div>
+                <div style={{ fontSize: 11, marginTop: 2, opacity: isActive ? 0.85 : 0.65 }}>{done}/{target} sessions</div>
               </button>
             );
           })}
         </div>
       </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ borderRadius: 16, padding: 16, background: `${brand.sage}15`, borderLeft: `4px solid ${brand.sage}` }}>
-          <p style={{ fontSize: 14, color: brand.forest, lineHeight: 1.7, fontStyle: 'italic', margin: 0 }}>{program.description}</p>
-        </div>
-
-        {program.isAIGenerated && program.whyItExists && (
-          <div style={{ borderRadius: 16, padding: 16, background: `${brand.terracotta}10`, borderLeft: `4px solid ${brand.terracotta}` }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: brand.terracotta, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Why this happens</p>
-            <p style={{ fontSize: 14, color: brand.charcoal, lineHeight: 1.7, margin: 0 }}>{program.whyItExists}</p>
+      <div style={{ ...wrap, display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 14 }}>
+        {/* About: open on the first visit, collapsed once the user has started. */}
+        <details open={sessions.length === 0} style={{ ...card, padding: 0 }}>
+          <summary style={{ cursor: 'pointer', padding: '14px 18px', fontSize: 14, fontWeight: 600, color: brand.forest }}>
+            About this program
+          </summary>
+          <div style={{ padding: '0 18px 16px', fontSize: 14, color: brand.charcoal, lineHeight: 1.7, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p style={{ margin: 0 }}>{program.description}</p>
+            {hasExplanation && program.whyItExists && (
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 700, color: brand.terracotta, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Why this happens</p>
+                <p style={{ margin: 0 }}>{program.whyItExists}</p>
+              </div>
+            )}
+            {hasExplanation && program.howExercisesHelp && (
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 700, color: brand.forest, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>How these exercises help</p>
+                <p style={{ margin: 0 }}>{program.howExercisesHelp}</p>
+              </div>
+            )}
           </div>
-        )}
-        {program.isAIGenerated && program.howExercisesHelp && (
-          <div style={{ borderRadius: 16, padding: 16, background: `${brand.forest}08`, borderLeft: `4px solid ${brand.sage}` }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: brand.forest, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0.5 }}>How these exercises help</p>
-            <p style={{ fontSize: 14, color: brand.charcoal, lineHeight: 1.7, margin: 0 }}>{program.howExercisesHelp}</p>
-          </div>
-        )}
-
-        <p style={{ fontSize: 13, color: brand.charcoal, lineHeight: 1.6, margin: 0, padding: '10px 14px', borderRadius: 12, background: 'white', border: `1px solid ${brand.warm}` }}>
-          <strong>Listen to your body:</strong> mild discomfort (up to 3-4/10) is okay. Stop an exercise if pain goes above {PAIN_STOP_THRESHOLD}/10,
-          or if you feel sharp pain, numbness, tingling, or dizziness.
-        </p>
-
-        {/* Today's session */}
-        {currentWeekData && (
-          <section aria-labelledby="todays-session" style={card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-              <h2 id="todays-session" style={{ fontFamily: fonts.display, fontSize: 18, color: brand.forest, margin: 0 }}>
-                Today&rsquo;s session
-              </h2>
-              <span style={{ fontSize: 13, color: brand.stone }}>
-                {todaysSession && isSessionComplete(todaysSession, program)
-                  ? 'Done for today ✓'
-                  : `${completedToday.length}/${currentWeekData.exercises.length} exercises done`}
-              </span>
-            </div>
-            <PainTracker
-              todayPain={todaysSession?.pain}
-              history={history}
-              trend={painTrend(history)}
-              onChange={(pain) => setPain(program, currentWeek, pain, today)}
-            />
-          </section>
-        )}
+        </details>
 
         {weekDone && (
           <div role="status" style={{ ...card, background: `${brand.sage}18`, borderColor: `${brand.sage}55` }}>
@@ -202,22 +171,35 @@ export const ProgramView: React.FC<ProgramViewProps> = ({ program, onBack, actio
             )}
           </div>
         )}
-      </div>
 
-      {/* Week Content */}
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '8px 16px 24px' }}>
         {currentWeekData && (
           <WeekView
             week={currentWeekData}
-            completedToday={completedToday}
+            completedToday={todaysSession?.completed ?? []}
+            sessionDone={!!todaysSession && isSessionComplete(todaysSession, program)}
             sessionsDone={sessionsThisWeek}
             sessionsTarget={target}
             onToggleExercise={(exerciseId) => toggleExercise(program, exerciseId, currentWeek, today)}
           />
         )}
-      </div>
 
-      {actions && <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px 40px' }}>{actions}</div>}
+        {currentWeekData && (
+          <section aria-label="Pain check-in" style={card}>
+            <PainTracker
+              todayPain={todaysSession?.pain}
+              history={history}
+              trend={painTrend(history)}
+              onChange={(pain) => setPain(program, currentWeek, pain, today)}
+            />
+          </section>
+        )}
+
+        {actions}
+
+        <button type="button" onClick={handleResetProgress} style={{ ...textButton, alignSelf: 'flex-start', color: brand.stone }}>
+          Reset progress
+        </button>
+      </div>
     </div>
   );
 };

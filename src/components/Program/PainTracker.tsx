@@ -10,6 +10,11 @@ interface PainTrackerProps {
   onChange: (pain: number) => void;
 }
 
+function shortDate(key: string): string {
+  const [year, month, day] = key.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 function Sparkline({ history }: { history: { date: string; pain: number }[] }) {
   const points = history.slice(-14);
   const width = 300;
@@ -50,9 +55,9 @@ function Sparkline({ history }: { history: { date: string; pain: number }[] }) {
         ))}
       </svg>
       <figcaption style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: brand.stone, marginTop: 4 }}>
-        <span>{first.date}</span>
-        <span>dashed line = {PAIN_STOP_THRESHOLD}/10</span>
-        <span>{last.date}</span>
+        <span>{shortDate(first.date)}</span>
+        <span>Pain over time · dashed line = {PAIN_STOP_THRESHOLD}/10</span>
+        <span>{shortDate(last.date)}</span>
       </figcaption>
     </figure>
   );
@@ -76,10 +81,10 @@ export const PainTracker: React.FC<PainTrackerProps> = ({ todayPain, history, tr
   return (
     <div>
       <fieldset style={{ border: 'none', margin: 0, padding: 0 }}>
-        <legend style={{ fontFamily: fonts.display, fontSize: 15, color: brand.forest, marginBottom: 8 }}>
+        <legend style={{ fontFamily: fonts.display, fontSize: 18, color: brand.forest, marginBottom: 10, padding: 0 }}>
           How is your pain today?
         </legend>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(11, minmax(0, 1fr))', gap: 4, maxWidth: 440 }}>
           {Array.from({ length: 11 }, (_, pain) => {
             const selected = todayPain === pain;
             return (
@@ -90,7 +95,7 @@ export const PainTracker: React.FC<PainTrackerProps> = ({ todayPain, history, tr
                 aria-label={`Pain ${pain} out of 10`}
                 onClick={() => onChange(pain)}
                 style={{
-                  width: 30, height: 30, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  height: 34, padding: 0, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   fontFamily: fonts.body,
                   border: `1px solid ${selected ? brand.forest : brand.warm}`,
                   background: selected ? (pain > PAIN_STOP_THRESHOLD ? brand.terracotta : brand.forest) : 'white',
@@ -102,7 +107,10 @@ export const PainTracker: React.FC<PainTrackerProps> = ({ todayPain, history, tr
             );
           })}
         </div>
-        <p style={{ fontSize: 11, color: brand.stone, margin: '6px 0 0' }}>0 = no pain, 10 = worst imaginable</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: 440, fontSize: 12, color: brand.stone, margin: '6px 0 0' }}>
+          <span>No pain</span>
+          <span>Worst imaginable</span>
+        </div>
       </fieldset>
       {note && (
         <p role="status" style={{ fontSize: 13, lineHeight: 1.6, borderRadius: 10, padding: '10px 12px', margin: '12px 0 0', ...tones[note.tone] }}>
